@@ -72,11 +72,16 @@ where
     let s = serde::de::Deserialize::deserialize(des)?;
     let snapshot_time = serde_json::from_str(s).map_err(serde::de::Error::custom)?;
 
+    // Duration from unix epoch to now
     let now_since_unix_epoch = SystemTime::UNIX_EPOCH.elapsed().unwrap();
+
+    // Duration from unix epoch to snapshot creation
     let snapshot_since_epoch = Duration::from_secs(snapshot_time);
+
+    // Age is the difference
     let age = now_since_unix_epoch
         .checked_sub(snapshot_since_epoch)
-        .unwrap_or(Duration::ZERO);
+        .unwrap_or(Duration::from_secs(0));
 
     Ok(age)
 }
