@@ -81,7 +81,7 @@ where
     // Age is the difference
     let age = now_since_unix_epoch
         .checked_sub(snapshot_since_epoch)
-        .unwrap_or(Duration::from_secs(0));
+        .unwrap_or_else(|| Duration::from_secs(0));
 
     Ok(age)
 }
