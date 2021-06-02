@@ -1,6 +1,6 @@
 # xo-api-client
 
-Rust library for communicating with [Xen Orchestra](https://github.com/vatesfr/xen-orchestra) through its API
+Unofficial Rust crate for accessing [Xen Orchestra](https://github.com/vatesfr/xen-orchestra) through its API
 
 # License
 `xo-api-client` is distributed under the terms of both the MIT license and
