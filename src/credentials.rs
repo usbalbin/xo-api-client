@@ -22,9 +22,9 @@ impl FromStr for Token {
     }
 }
 
-impl Into<Credentials> for Token {
-    fn into(self) -> Credentials {
-        Credentials::Token(self)
+impl From<Token> for Credentials {
+    fn from(val: Token) -> Self {
+        Credentials::Token(val)
     }
 }
 
@@ -34,9 +34,9 @@ pub struct EmailAndPassword {
     pub password: String,
 }
 
-impl Into<Credentials> for EmailAndPassword {
-    fn into(self) -> Credentials {
-        Credentials::Password(self)
+impl From<EmailAndPassword> for Credentials {
+    fn from(val: EmailAndPassword) -> Self {
+        Credentials::Password(val)
     }
 }
 
