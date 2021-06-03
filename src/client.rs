@@ -9,8 +9,10 @@ use jsonrpsee_ws_client::{
 use tokio::task::JoinHandle;
 
 use crate::{
-    token_handler::TokenHandler, types::VmOrSnapshotId, vm::OtherInfo, ObjectType, RpcError,
-    Snapshot, SnapshotId, Vm, VmId,
+    credentials::{Credentials, Token},
+    types::VmOrSnapshotId,
+    vm::OtherInfo,
+    ObjectType, RpcError, Snapshot, SnapshotId, Vm, VmId,
 };
 
 #[derive(serde::Deserialize)]
@@ -19,13 +21,6 @@ struct SigninResponse {}
 pub struct Client {
     inner: WsClient,
     _bg: JoinHandle<()>,
-}
-
-#[derive(Debug)]
-pub enum ConnectError<TH: TokenHandler> {
-    TokenHandlerSave(TH::SaveErr),
-    TokenHandlerLoad(TH::LoadErr),
-    Rpc(RpcError),
 }
 
 #[derive(Debug)]
@@ -41,19 +36,24 @@ pub enum RevertSnapshotError {
 }
 
 impl Client {
-    pub async fn connect<TH: TokenHandler>(
-        url: &str,
-        token_handler: &mut TH,
-    ) -> Result<Self, ConnectError<TH>> {
-        log::debug!("Connecting...");
-        let inner = Client::connect_inner(url).await;
+    pub async fn connect(url: &str) -> Result<Self, RpcError> {
+        log::debug!("Connecting to: {}", url);
 
+        let inner = WsClientBuilder::default()
+            .connection_timeout(std::time::Duration::from_secs(10))
+            .build(&url)
+            .await?;
+
+        log::debug!("Connected");
+
+        // xo-server tends to send notifications to the clients procedure "all", make sure to
+        // listen to this or jsonrpsee_ws_client will report errors
         let mut subscription = inner
             .register_notification::<BTreeMap<String, JsonValue>>("all")
-            .await
-            .unwrap();
+            .await?;
 
         // TODO: What to do with this?
+        // This spawns a background task handling the "all" notification mentioned above
         let bg = tokio::spawn(async move {
             loop {
                 if let Some(data) = subscription.notifs_rx.next().await {
@@ -62,32 +62,11 @@ impl Client {
             }
         });
 
-        let token = token_handler
-            .load()
-            .await
-            .map_err(ConnectError::TokenHandlerLoad)?;
-
-        let _: SigninResponse = inner
-            .request(
-                "session.signIn",
-                JsonRpcParams::Map(array::IntoIter::new([("token", token.into())]).collect()),
-            )
-            .await
-            .expect("Sign in failed");
-
-        Client::update_token(&inner, token_handler).await?;
-
         Ok(Client { inner, _bg: bg })
     }
 
-    pub async fn sign_in<TH: TokenHandler>(
-        url: &str,
-        username: String,
-        password: String,
-        token_handler: &mut TH,
-    ) -> Result<(), ConnectError<TH>> {
-        let inner = Client::connect_inner(url).await;
-        log::info!("Signing in...");
+    pub async fn sign_in(&self, credentials: impl Into<Credentials>) -> Result<(), RpcError> {
+        log::debug!("Signing in...");
 
         #[derive(serde::Serialize)]
         pub struct Credentials {
@@ -95,56 +74,27 @@ impl Client {
             password: String,
         }
 
-        let _: SigninResponse = inner
+        let _: SigninResponse = self
+            .inner
             .request(
                 "session.signIn",
-                JsonRpcParams::Map(
-                    array::IntoIter::new([
-                        ("email", username.into()),
-                        ("password", password.into()),
-                    ])
-                    .collect(),
-                ),
+                JsonRpcParams::Map(credentials.into().into()),
             )
-            .await
-            .map_err(ConnectError::Rpc)?;
+            .await?;
 
-        Client::update_token(&inner, token_handler).await?;
+        log::debug!("Signed in");
 
         Ok(())
     }
 
-    async fn connect_inner(url: &str) -> WsClient {
-        log::info!("Connecting to: {}", url);
-
-        let con = {
-            let builder = WsClientBuilder::default()
-                .certificate_store(jsonrpsee_ws_client::transport::CertificateStore::Native)
-                .connection_timeout(std::time::Duration::from_secs(10));
-
-            builder.build(&url).await.unwrap()
-        };
-        log::info!("Connected");
-
-        con
-    }
-
-    async fn update_token<TH: TokenHandler>(
-        inner: &WsClient,
-        token_handler: &mut TH,
-    ) -> Result<(), ConnectError<TH>> {
+    pub async fn create_token(&self) -> Result<Token, RpcError> {
         // TODO: consider specifying the `expiresIn` parameter
-        let token: String = inner
+        let token: Token = self
+            .inner
             .request("token.create", JsonRpcParams::Map(BTreeMap::new()))
-            .await
-            .map_err(ConnectError::Rpc)?;
+            .await?;
 
-        token_handler
-            .save(&token)
-            .await
-            .map_err(ConnectError::TokenHandlerSave)?;
-
-        Ok(())
+        Ok(token)
     }
 
     /// xo-cli: xo.getAllObjects [filter=<object>] [limit=<number>] [ndjson=<boolean>]
