@@ -1,6 +1,5 @@
 use std::{array, collections::BTreeMap};
 
-use futures::StreamExt;
 use jsonrpsee_ws_client::{
     traits::{Client as RpcCient, SubscriptionClient},
     v2::params::JsonRpcParams,
@@ -49,14 +48,14 @@ impl Client {
         // xo-server tends to send notifications to the clients procedure "all", make sure to
         // listen to this or jsonrpsee_ws_client will report errors
         let mut subscription = inner
-            .register_notification::<BTreeMap<String, JsonValue>>("all")
+            .subscribe_to_method::<BTreeMap<String, JsonValue>>("all")
             .await?;
 
         // TODO: What to do with this?
         // This spawns a background task handling the "all" notification mentioned above
         let bg = tokio::spawn(async move {
             loop {
-                if let Some(data) = subscription.notifs_rx.next().await {
+                if let Some(data) = subscription.next().await.transpose() {
                     log::trace!("Received: {:?}", data);
                 }
             }
