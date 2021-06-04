@@ -3,9 +3,8 @@ use std::{array, collections::BTreeMap};
 use jsonrpsee_ws_client::{
     traits::{Client as RpcCient, SubscriptionClient},
     v2::params::JsonRpcParams,
-    JsonValue, WsClient, WsClientBuilder,
+    DeserializeOwned, JsonValue, Subscription, WsClient, WsClientBuilder,
 };
-use tokio::task::JoinHandle;
 
 use crate::{
     credentials::{Credentials, Token},
@@ -19,7 +18,6 @@ struct SigninResponse {}
 
 pub struct Client {
     inner: WsClient,
-    _bg: JoinHandle<()>,
 }
 
 #[derive(Debug)]
@@ -45,23 +43,7 @@ impl Client {
 
         log::debug!("Connected");
 
-        // xo-server tends to send notifications to the clients procedure "all", make sure to
-        // listen to this or jsonrpsee_ws_client will report errors
-        let mut subscription = inner
-            .subscribe_to_method::<BTreeMap<String, JsonValue>>("all")
-            .await?;
-
-        // TODO: What to do with this?
-        // This spawns a background task handling the "all" notification mentioned above
-        let bg = tokio::spawn(async move {
-            loop {
-                if let Some(data) = subscription.next().await.transpose() {
-                    log::trace!("Received: {:?}", data);
-                }
-            }
-        });
-
-        Ok(Client { inner, _bg: bg })
+        Ok(Client { inner })
     }
 
     pub async fn sign_in(&self, credentials: impl Into<Credentials>) -> Result<(), RpcError> {
@@ -84,6 +66,18 @@ impl Client {
         log::debug!("Signed in");
 
         Ok(())
+    }
+
+    /// Subscribe to method "all"
+    ///
+    /// xo-server tends to send notifications to the client's JSON RPC procedure "all"
+    /// subscribe_to_notification_all returns a value that can be used to read those
+    /// notifications
+    pub async fn subscribe_to_notification_all<T>(&self) -> Result<Subscription<T>, RpcError>
+    where
+        T: DeserializeOwned,
+    {
+        self.inner.subscribe_to_method::<T>("all").await
     }
 
     pub async fn create_token(&self) -> Result<Token, RpcError> {
