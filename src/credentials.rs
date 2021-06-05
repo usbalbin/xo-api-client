@@ -44,7 +44,7 @@ impl From<EmailAndPassword> for Credentials {
     }
 }
 
-/// Some type of Credentials used to authenticate with Xen Orchestra's API.
+/// Some type of credentials used to authenticate with Xen Orchestra's API.
 ///
 /// A value of this type may ether contain a [`Token`] or an [`EmailAndPassword`]
 pub enum Credentials {

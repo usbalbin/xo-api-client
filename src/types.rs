@@ -66,7 +66,7 @@ pub struct Snapshot {
 
     /// Approximation of how much time has passed from the snapshot was created
     /// to when this Snapshot object was queried from the server
-    /// Not that his is only aproximation
+    /// Note that his is only aproximation
     #[serde(deserialize_with = "duration_from_seconds")]
     pub snapshot_age: Duration,
 }

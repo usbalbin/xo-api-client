@@ -42,7 +42,7 @@ impl<'a, O: serde::de::DeserializeOwned> Vm<O> {
         matches!(self.power_state, PowerState::Running)
     }
 
-    /// Try to guess distro of VM
+    /// Try to guess OS distro of VM
     ///
     /// Note: This only works for running VMs, returns `None` when distro
     /// can not be determined.

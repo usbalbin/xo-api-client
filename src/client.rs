@@ -216,7 +216,7 @@ impl Client {
         .await
     }
 
-    /// This function will try to initiate a soft restart of the server
+    /// This function will try to initiate a soft restart of the VM
     /// The there is no guarantee that the VM has started once the returned
     /// future resolves
     ///
@@ -241,7 +241,7 @@ impl Client {
         Ok(())
     }
 
-    /// Create snapshot og the specified VM
+    /// Create snapshot of the specified VM
     ///
     /// `save_memory`: Should the RAM memory of the VM be saved? Setting this to true does make the
     /// snapshot take a lot more time, may even freeze the VM for some time. If you are unsure,
