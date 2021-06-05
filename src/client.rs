@@ -50,6 +50,7 @@ pub enum RevertSnapshotError {
 ///     let con = Client::connect(url)
 ///         .await
 ///         .expect("Failed to connect to server");
+///
 ///     con.sign_in(EmailAndPassword { email, password })
 ///         .await
 ///         .expect("Failed to sign in");
