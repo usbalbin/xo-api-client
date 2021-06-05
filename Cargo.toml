@@ -6,7 +6,7 @@ edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/usbalbin/xo-api-client"
 description = "Unofficial crate for accessing Xen Orchestra through its API"
-keywords = ["xo", "xen", "xcp", "xcp-ng", "client", "api", "vm", "tokio"]
+keywords = ["xen", "xcp-ng", "client", "vm", "tokio"]
 categories = ["api-bindings", "asynchronous", "network-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
