@@ -2,6 +2,11 @@ use std::{collections::BTreeMap, net::Ipv4Addr};
 
 use crate::VmId;
 
+/// Type representing a VM
+///
+/// Note that the "other" property contains a lot of different data. In the Xen Orchestra the user may
+/// even add additional values. For this reason the struct is made generic over the type `O`. 
+/// See the trait [`OtherInfo`] for more info
 #[derive(serde::Deserialize, Debug)]
 pub struct Vm<O> {
     pub id: VmId,
@@ -22,6 +27,7 @@ pub struct Vm<O> {
     pub other: O,
 }
 
+/// Type describing power state of VM
 #[derive(Debug, Clone, Copy, serde::Deserialize)]
 pub enum PowerState {
     Running,
@@ -31,10 +37,15 @@ pub enum PowerState {
 }
 
 impl<'a, O: serde::de::DeserializeOwned> Vm<O> {
+    /// Check if VM is running.
     pub fn is_running(&self) -> bool {
         matches!(self.power_state, PowerState::Running)
     }
 
+    /// Try to guess distro of VM
+    ///
+    /// Note: This only works for running VMs, returns `None` when distro
+    /// can not be determined.
     pub fn distro(&self) -> Option<&str> {
         match &self.os_version {
             Some(os_version) => match os_version.get("distro") {
@@ -46,6 +57,9 @@ impl<'a, O: serde::de::DeserializeOwned> Vm<O> {
         }
     }
 
+    /// Get iterator of all valid IPv4 addresses for VM.
+    ///
+    /// Note: This only works for running VMs, returns empty iterator otherwise
     pub fn ipv4_addresses(&self) -> impl Iterator<Item = Ipv4Addr> + '_ {
         self.addresses
             .iter()

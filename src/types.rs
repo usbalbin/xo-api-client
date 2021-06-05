@@ -2,6 +2,7 @@ use std::time::{Duration, SystemTime};
 
 use jsonrpsee_ws_client::JsonValue;
 
+/// Unique id of a virtual machine
 #[derive(serde::Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
 pub struct VmId(pub(crate) String);
@@ -39,6 +40,7 @@ impl From<VmId> for VmOrSnapshotId {
     }
 }
 
+/// Unique id of a virtual machine snapshot
 #[derive(serde::Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
 pub struct SnapshotId(pub(crate) String);
@@ -55,16 +57,21 @@ impl From<SnapshotId> for JsonValue {
     }
 }
 
+/// Type representing snapshot of a VM
 #[derive(serde::Deserialize, Debug)]
 pub struct Snapshot {
     pub id: SnapshotId,
     pub name: String,
     pub vm_name: String,
 
+    /// Approximation of how much time has passed from the snapshot was created
+    /// to when this Snapshot object was queried from the server
+    /// Not that his is only aproximation
     #[serde(deserialize_with = "duration_from_seconds")]
     pub snapshot_age: Duration,
 }
 
+// TODO: how accurate is this aproximation?
 fn duration_from_seconds<'de, D>(des: D) -> Result<Duration, D::Error>
 where
     D: serde::de::Deserializer<'de>,

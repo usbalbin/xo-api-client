@@ -4,6 +4,7 @@ use jsonrpsee_ws_client::JsonValue;
 
 use crate::types::Impossible;
 
+/// Login token used to authenticate with Xen Orchestra's API
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 #[serde(transparent)]
 pub struct Token(pub String);
@@ -28,6 +29,9 @@ impl From<Token> for Credentials {
     }
 }
 
+/// Email and password used to authenticate with Xen Orchestra's API.
+///
+/// Note that there is also the type [`Token`]
 #[derive(Debug, Clone)]
 pub struct EmailAndPassword {
     pub email: String,
@@ -40,6 +44,9 @@ impl From<EmailAndPassword> for Credentials {
     }
 }
 
+/// Some type of Credentials used to authenticate with Xen Orchestra's API.
+///
+/// A value of this type may ether contain a [`Token`] or an [`EmailAndPassword`]
 pub enum Credentials {
     Password(EmailAndPassword),
     Token(Token),
