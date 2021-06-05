@@ -5,7 +5,7 @@ use crate::VmId;
 /// Type representing a VM
 ///
 /// Note that the "other" property contains a lot of different data. In the Xen Orchestra the user may
-/// even add additional values. For this reason the struct is made generic over the type `O`. 
+/// even add additional values. For this reason the struct is made generic over the type `O`.
 /// See the trait [`OtherInfo`] for more info
 #[derive(serde::Deserialize, Debug)]
 pub struct Vm<O> {
