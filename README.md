@@ -14,6 +14,13 @@ TODO: Add tests before showing these badges
 
 Unofficial Rust crate for accessing [Xen Orchestra](https://github.com/vatesfr/xen-orchestra) through its API
 
+## Under development
+The library is still in early development, please do not use in production. The API is nowhere near complete and only covers
+a very small fraction of XO's api. Lots of things might get changed and/or added in breaking ways at any time.
+
+### Async Runtime
+This library uses the tokio v1 runtime
+
 # License
 `xo-api-client` is distributed under the terms of both the MIT license and
 the Apache License (Version 2.0).
