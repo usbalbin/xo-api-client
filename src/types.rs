@@ -76,8 +76,7 @@ fn duration_from_seconds<'de, D>(des: D) -> Result<Duration, D::Error>
 where
     D: serde::de::Deserializer<'de>,
 {
-    let s = serde::de::Deserialize::deserialize(des)?;
-    let snapshot_time = serde_json::from_str(s).map_err(serde::de::Error::custom)?;
+    let snapshot_time = serde::de::Deserialize::deserialize(des)?;
 
     // Duration from unix epoch to now
     let now_since_unix_epoch = SystemTime::UNIX_EPOCH.elapsed().unwrap();
