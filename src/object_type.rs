@@ -9,6 +9,7 @@ use jsonrpsee_ws_client::JsonValue;
 /// `xo-cli --list-objects --type | grep type | sort | uniq`
 /// on an existing XO-setup. Thus there may be more types
 // TODO: Check if there are more types
+#[derive(Debug)]
 pub enum ObjectType {
     GpuGroup,
 
