@@ -18,11 +18,11 @@ pub struct Vm<O> {
     pub pool: String,
     pub tags: Vec<String>,
 
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[serde(default)]
     addresses: BTreeMap<String, String>,
 
-    #[serde(skip_serializing_if = "BTreeMap::is_empty", default)]
-    pub os_version: Option<BTreeMap<String, String>>,
+    #[serde(deserialize_with = "map_from_optional_map", default)]
+    pub os_version: BTreeMap<String, String>,
 
     pub other: O,
 }
@@ -47,12 +47,9 @@ impl<'a, O: serde::de::DeserializeOwned> Vm<O> {
     /// Note: This only works for running VMs, returns `None` when distro
     /// can not be determined.
     pub fn distro(&self) -> Option<&str> {
-        match &self.os_version {
-            Some(os_version) => match os_version.get("distro") {
-                Some(distro) => Some(distro),
-                None if os_version.contains_key("spmajor") => Some("windows"),
-                None => None,
-            },
+        match &self.os_version.get("distro") {
+            Some(distro) => Some(distro),
+            None if self.os_version.contains_key("spmajor") => Some("windows"),
             None => None,
         }
     }
@@ -73,6 +70,16 @@ impl<'a, O: serde::de::DeserializeOwned> Vm<O> {
                 }
             })
     }
+}
+
+fn map_from_optional_map<'de, D>(des: D) -> Result<BTreeMap<String, String>, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    let option: Option<_> = serde::de::Deserialize::deserialize(des).unwrap();//?;
+    //let option: Option<_> = serde_json::from_str(s).unwrap();//.map_err(serde::de::Error::custom).unwrap();//?;
+
+    Ok(option.unwrap_or_default())
 }
 
 /// This is the "other" section of VM from XO.
