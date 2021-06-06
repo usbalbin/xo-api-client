@@ -3,7 +3,7 @@ use std::time::{Duration, SystemTime};
 use jsonrpsee_ws_client::JsonValue;
 
 /// Unique id of a virtual machine
-#[derive(serde::Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct VmId(pub(crate) String);
 
@@ -41,7 +41,7 @@ impl From<VmId> for VmOrSnapshotId {
 }
 
 /// Unique id of a virtual machine snapshot
-#[derive(serde::Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct SnapshotId(pub(crate) String);
 
