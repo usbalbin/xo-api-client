@@ -89,3 +89,6 @@ where
 ///
 /// A type that can be deserialized from a flat string to string object.
 pub trait OtherInfo: serde::de::DeserializeOwned {}
+
+impl OtherInfo for BTreeMap<String, String> {}
+impl OtherInfo for std::collections::HashMap<String, String> {}
