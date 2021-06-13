@@ -1,0 +1,113 @@
+{
+    "type": "VM",
+    "addresses": {
+        "0/ipv4/0": "10.0.1.52",
+        "0/ipv6/0": "fe80::dead:beaf:dead:beaf"
+    },
+    "auto_poweron": true,
+    "bios_strings": {
+        "bios-vendor": "Xen",
+        "bios-version": "",
+        "system-manufacturer": "Xen",
+        "system-product-name": "HVM domU",
+        "system-version": "",
+        "system-serial-number": "",
+        "baseboard-manufacturer": "",
+        "baseboard-product-name": "",
+        "baseboard-version": "",
+        "baseboard-serial-number": "",
+        "baseboard-asset-tag": "",
+        "baseboard-location-in-chassis": "",
+        "enclosure-asset-tag": "",
+        "hp-rombios": "",
+        "oem-1": "Xen",
+        "oem-2": "MS_VM_CERT/SHA1/deadbeafdeadbeafdeadbeafdeadbeafdeadbeaf"
+    },
+    "blockedOperations": {},
+    "boot": {
+        "order": "c",
+        "firmware": "bios"
+    },
+    "CPUs": {
+        "max": 3,
+        "number": 3
+    },
+    "current_operations": {},
+    "expNestedHvm": false,
+    "mainIpAddress": "10.0.1.52",
+    "high_availability": "restart",
+    "memory": {
+        "dynamic": [
+            4294967296,
+            4294967296
+        ],
+        "static": [
+            536870912,
+            4294967296
+        ],
+        "size": 4294963200
+    },
+    "installTime": 1614020752,
+    "name_description": "Some description",
+    "name_label": "debian 10",
+    "other": {
+        "XenCenter.CustomFields.foo": "bar",
+        "XenCenter.CustomFields.baz": "quix",
+        "import_task": "OpaqueRef:deadbeaf-dead-beaf-dead-beafdeadbeaf",
+        "auto_poweron": "true",
+        "base_template_name": "Debian Buster 10",
+        "mac_seed": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+        "install-methods": "cdrom,nfs,http,ftp",
+        "linux_template": "true",
+        "xo:copy_of": "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+    },
+    "os_version": {
+        "name": "Debian GNU/Linux 10 (buster)",
+        "uname": "4.19.0-13-amd64",
+        "distro": "debian",
+        "major": "10",
+        "minor": "10"
+    },
+    "power_state": "Running",
+    "hasVendorDevice": false,
+    "snapshots": [
+        "deadbeaf-dead-beaf-dead-beafdeadbea0",
+        "9eff3c23-b1ab-fb52-3d0d-a185d7b3a210",
+        "dede9ae8-ed12-af41-c156-ef3d13dd0c9d",
+        "ef9eeef7-e06c-4f4a-6d91-2b6348cca81d"
+    ],
+    "startDelay": 0,
+    "startTime": 1619132806,
+    "secureBoot": false,
+    "tags": [
+        "Test"
+    ],
+    "VIFs": [
+        "deadbeaf-dead-beaf-dead-beafdeadbeaa",
+        "deadbeaf-dead-beaf-dead-beafdeadbeab"
+    ],
+    "virtualizationMode": "hvm",
+    "xenTools": {
+        "major": 8,
+        "minor": 0,
+        "version": 8
+    },
+    "managementAgentDetected": true,
+    "pvDriversDetected": true,
+    "pvDriversVersion": "8.0.50-1",
+    "pvDriversUpToDate": true,
+    "$container": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "$VBDs": [
+        "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+    ],
+    "VGPUs": [],
+    "$VGPUs": [],
+    "vga": "std",
+    "videoram": "8",
+    "coresPerSocket": 3,
+    "cpuWeight": 256,
+    "id": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "uuid": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "$pool": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "$poolId": "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+}

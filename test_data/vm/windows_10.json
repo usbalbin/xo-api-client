@@ -1,0 +1,113 @@
+{
+    "$VBDs": [
+        "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+    ],
+    "$VGPUs": [],
+    "$container": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "$pool": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "$poolId": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "CPUs": {
+        "max": 2,
+        "": 2
+    },
+    "VGPUs": [],
+    "VIFs": [
+        "deadbeaf-dead-beaf-dead-beafdeadbeaa",
+        "deadbeaf-dead-beaf-dead-beafdeadbeab",
+        "deadbeaf-dead-beaf-dead-beafdeadbeac",
+        "deadbeaf-dead-beaf-dead-beafdeadbead"
+    ],
+    "addresses": {
+        "0/ipv4/0": "192.168.7.42",
+        "0/ipv6/0": "fe80:0000:0000:0000:dead:beaf:dead:beaa",
+        "1/ipv4/0": "192.168.8.42",
+        "1/ipv6/0": "fe80:0000:0000:0000:dead:beaf:dead:beab",
+        "2/ipv4/0": "192.168.9.42",
+        "2/ipv6/0": "fe80:0000:0000:0000:dead:beaf:dead:beac",
+        "3/ipv4/0": "169.254.149.176",
+        "3/ipv6/0": "fe80:0000:0000:0000:dead:beaf:dead:bead"
+    },
+    "auto_poweron": true,
+    "bios_s": {
+        "baseboard-asset-tag": "",
+        "baseboard-location-in-chassis": "",
+        "baseboard-manufacturer": "",
+        "baseboard-product-name": "",
+        "baseboard-serial-": "",
+        "baseboard-version": "",
+        "bios-vendor": "Xen",
+        "bios-version": "",
+        "enclosure-asset-tag": "",
+        "hp-rombios": "",
+        "oem-1": "Xen",
+        "oem-2": "MS_VM_CERT/SHA1/deadbeafdeadbeafdeadbeafdeadbeafdeadbeaf",
+        "system-manufacturer": "Xen",
+        "system-product-name": "HVM domU",
+        "system-serial-": "",
+        "system-version": ""
+    },
+    "blockedOperations": {},
+    "boot": {
+        "firmware": "uefi",
+        "order": "cd"
+    },
+    "coresPerSocket": 2,
+    "current_operations": {},
+    "expNestedHvm": false,
+    "hasVendorDevice": true,
+    "high_availability": "",
+    "id": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "installTime": 1611256186,
+    "mainIpAddress": "192.168.7.42",
+    "managementAgentDetected": true,
+    "memory": {
+        "dynamic": [
+            4294967296,
+            5368709120
+        ],
+        "size": 5370798080,
+        "static": [
+            2147483648,
+            5368709120
+        ]
+    },
+    "name_description": "Here is a description",
+    "name_label": "windows 10",
+    "os_version": {
+        "spmajor": "0",
+        "spminor": "0"
+    },
+    "other": {
+        "auto_poweron": "true",
+        "base_template_name": "Windows 10 (64-bit)",
+        "import_task": "OpaqueRef:deadbeaf-dead-beaf-dead-beafdeadbeaf",
+        "install-methods": "cdrom",
+        "mac_seed": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+        "xo:copy_of": "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+    },
+    "power_state": "Running",
+    "pvDriversDetected": true,
+    "pvDriversUpToDate": true,
+    "pvDriversVersion": "9.0.0-33",
+    "secureBoot": false,
+    "snapshots": [
+        "deadbeaf-dead-beaf-dead-beafdeadbeaa",
+        "deadbeaf-dead-beaf-dead-beafdeadbeab",
+        "deadbeaf-dead-beaf-dead-beafdeadbeac",
+        "deadbeaf-dead-beaf-dead-beafdeadbead",
+        "deadbeaf-dead-beaf-dead-beafdeadbeae"
+    ],
+    "startDelay": 0,
+    "startTime": 1617211732,
+    "tags": [],
+    "type": "VM",
+    "uuid": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "vga": "std",
+    "videoram": "8",
+    "virtualizationMode": "hvm",
+    "xenTools": {
+        "major": 9,
+        "minor": 0,
+        "version": 9
+    }
+}

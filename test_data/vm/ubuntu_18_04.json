@@ -1,0 +1,112 @@
+{
+    "$VBDs": [
+        "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+    ],
+    "$VGPUs": [],
+    "$container": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "$pool": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "$poolId": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "CPUs": {
+        "max": 2,
+        "number": 2
+    },
+    "VGPUs": [],
+    "VIFs": [
+        "deadbeaf-dead-beaf-dead-beafdeadbeaa"
+    ],
+    "addresses": {
+        "0/ipv4/0": "10.0.3.25",
+        "0/ipv6/0": "fe80::dead:beaf:dead:beaf"
+    },
+    "auto_poweron": true,
+    "bios_strings": {
+        "baseboard-asset-tag": "",
+        "baseboard-location-in-chassis": "",
+        "baseboard-manufacturer": "",
+        "baseboard-product-name": "",
+        "baseboard-serial-number": "",
+        "baseboard-version": "",
+        "bios-vendor": "Xen",
+        "bios-version": "",
+        "enclosure-asset-tag": "",
+        "hp-rombios": "",
+        "oem-1": "Xen",
+        "oem-2": "MS_VM_CERT/SHA1/deadbeafdeadbeafdeadbeafdeadbeafdeadbeaf",
+        "system-manufacturer": "Xen",
+        "system-product-name": "HVM domU",
+        "system-serial-number": "",
+        "system-version": ""
+    },
+    "blockedOperations": {
+        "destroy": "true"
+    },
+    "boot": {
+        "order": "c"
+    },
+    "current_operations": {},
+    "expNestedHvm": false,
+    "hasVendorDevice": false,
+    "high_availability": "",
+    "id": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "installTime": null,
+    "mainIpAddress": "10.0.3.25",
+    "managementAgentDetected": true,
+    "memory": {
+        "dynamic": [
+            2147483648,
+            2147483648
+        ],
+        "size": 2147479552,
+        "static": [
+            2147483648,
+            2147483648
+        ]
+    },
+    "name_description": "Ubuntu Linux (64-bit)",
+    "name_label": "ubuntu 18.04",
+    "os_version": {
+        "distro": "ubuntu",
+        "major": "18",
+        "minor": "04",
+        "name": "Ubuntu 18.04.5 LTS",
+        "uname": "4.15.0-136-generic"
+    },
+    "other": {
+        "auto_poweron": "true",
+        "base_template_name": "Other install media",
+        "install-methods": "cdrom",
+        "mac_seed": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+        "vgpu_pci": "",
+        "xo:backup:sr": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+        "xo:base_delta": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+        "xo:copy_of": "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+    },
+    "power_state": "Running",
+    "pvDriversDetected": true,
+    "pvDriversUpToDate": true,
+    "pvDriversVersion": "8.0.50-1",
+    "secureBoot": false,
+    "snapshots": [
+        "deadbeaf-dead-beaf-dead-beafdeadbeaa",
+        "deadbeaf-dead-beaf-dead-beafdeadbeab",
+        "deadbeaf-dead-beaf-dead-beafdeadbeac",
+        "deadbeaf-dead-beaf-dead-beafdeadbead",
+        "deadbeaf-dead-beaf-dead-beafdeadbeae"
+    ],
+    "startDelay": 0,
+    "startTime": 1614968703,
+    "tags": [
+        "Important",
+        "Other tag"
+    ],
+    "type": "VM",
+    "uuid": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "vga": "cirrus",
+    "videoram": 4,
+    "virtualizationMode": "hvm",
+    "xenTools": {
+        "major": 8,
+        "minor": 0,
+        "version": 8
+    }
+}
