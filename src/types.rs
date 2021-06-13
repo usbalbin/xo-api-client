@@ -1,5 +1,3 @@
-use std::time::{Duration, SystemTime};
-
 use jsonrpsee_ws_client::JsonValue;
 
 /// Unique id of a virtual machine
@@ -61,36 +59,35 @@ impl From<SnapshotId> for JsonValue {
 #[derive(serde::Deserialize, Debug)]
 pub struct Snapshot {
     pub id: SnapshotId,
-    pub name: String,
-    pub vm_name: String,
-
-    /// Approximation of how much time has passed from the snapshot was created
-    /// to when this Snapshot object was queried from the server
-    /// Note that his is only aproximation
-    #[serde(deserialize_with = "duration_from_seconds")]
-    pub snapshot_age: Duration,
-}
-
-// TODO: how accurate is this aproximation?
-fn duration_from_seconds<'de, D>(des: D) -> Result<Duration, D::Error>
-where
-    D: serde::de::Deserializer<'de>,
-{
-    let snapshot_time = serde::de::Deserialize::deserialize(des)?;
-
-    // Duration from unix epoch to now
-    let now_since_unix_epoch = SystemTime::UNIX_EPOCH.elapsed().unwrap();
-
-    // Duration from unix epoch to snapshot creation
-    let snapshot_since_epoch = Duration::from_secs(snapshot_time);
-
-    // Age is the difference
-    let age = now_since_unix_epoch
-        .checked_sub(snapshot_since_epoch)
-        .unwrap_or_else(|| Duration::from_secs(0));
-
-    Ok(age)
+    pub name_label: String,
+    pub name_description: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Impossible {}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn debian() {
+        let s = std::fs::read_to_string("test_data/snapshot/debian_10.json").unwrap();
+        let debian_snapshot: super::Snapshot = serde_json::from_str(&s).unwrap();
+
+        assert_eq!(debian_snapshot.id.0, "deadbeaf-dead-beaf-dead-beafdeadbea0");
+        assert_eq!(debian_snapshot.name_label, "[XO My Backup Job] debian 10");
+        assert_eq!(debian_snapshot.name_description, "");
+
+        let s = std::fs::read_to_string("test_data/snapshot/pfsense_2_5_1.json").unwrap();
+        let pfsense_snapshot: super::Snapshot = serde_json::from_str(&s).unwrap();
+
+        assert_eq!(
+            pfsense_snapshot.id.0,
+            "deadbeaf-dead-beaf-dead-beafdeadbea1"
+        );
+        assert_eq!(
+            pfsense_snapshot.name_label,
+            "[XO My Backup Job] pfsense 2.5.1"
+        );
+        assert_eq!(pfsense_snapshot.name_description, "Foo description");
+    }
+}
