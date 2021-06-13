@@ -95,6 +95,16 @@ impl OtherInfo for std::collections::HashMap<String, String> {}
 
 #[cfg(test)]
 mod tests {
+    macro_rules! file_to_vm {
+        ($path:literal) => {{
+            let s = include_str!($path);
+
+            let hash_vm: super::Vm<HashMap<String, String>> = serde_json::from_str(&s).unwrap();
+            let tree_vm: super::Vm<BTreeMap<String, String>> = serde_json::from_str(&s).unwrap();
+            (hash_vm, tree_vm)
+        }};
+    }
+
     use std::{
         collections::{BTreeMap, HashMap},
         iter::FromIterator,
@@ -105,7 +115,7 @@ mod tests {
 
     #[test]
     fn debian() {
-        let debian = file_to_vm("test_data/vm/debian_10.json").0;
+        let debian = file_to_vm!("../test_data/vm/debian_10.json").0;
 
         assert_eq!(&debian.id.0, "deadbeaf-dead-beaf-dead-beafdeadbeaf");
         assert_eq!(
@@ -140,7 +150,7 @@ mod tests {
 
     #[test]
     fn pfsense() {
-        let pfsense = file_to_vm("test_data/vm/pfsense_2_5_1.json").1;
+        let pfsense = file_to_vm!("../test_data/vm/pfsense_2_5_1.json").1;
 
         assert_eq!(&pfsense.id.0, "deadbeaf-dead-beaf-dead-beafdeadbeaf");
         assert_eq!(
@@ -196,7 +206,7 @@ mod tests {
 
     #[test]
     fn ubuntu() {
-        let ubuntu = file_to_vm("test_data/vm/ubuntu_18_04.json").1;
+        let ubuntu = file_to_vm!("../test_data/vm/ubuntu_18_04.json").1;
 
         assert_eq!(&ubuntu.id.0, "deadbeaf-dead-beaf-dead-beafdeadbeaf");
         assert_eq!(
@@ -231,7 +241,7 @@ mod tests {
 
     #[test]
     fn windows() {
-        let windows = file_to_vm("test_data/vm/windows_10.json").0;
+        let windows = file_to_vm!("../test_data/vm/windows_10.json").0;
 
         assert_eq!(&windows.id.0, "deadbeaf-dead-beaf-dead-beafdeadbeaf");
         assert_eq!(
@@ -274,10 +284,10 @@ mod tests {
 
     #[test]
     fn other_info() {
-        let (debian_hash, debian_tree) = file_to_vm("test_data/vm/debian_10.json");
-        let (pfsense_hash, pfsense_tree) = file_to_vm("test_data/vm/pfsense_2_5_1.json");
-        let (ubuntu_hash, ubuntu_tree) = file_to_vm("test_data/vm/ubuntu_18_04.json");
-        let (windows_hash, windows_tree) = file_to_vm("test_data/vm/windows_10.json");
+        let (debian_hash, debian_tree) = file_to_vm!("../test_data/vm/debian_10.json");
+        let (pfsense_hash, pfsense_tree) = file_to_vm!("../test_data/vm/pfsense_2_5_1.json");
+        let (ubuntu_hash, ubuntu_tree) = file_to_vm!("../test_data/vm/ubuntu_18_04.json");
+        let (windows_hash, windows_tree) = file_to_vm!("../test_data/vm/windows_10.json");
 
         let debian_expected = [
             ("XenCenter.CustomFields.foo", "bar"),
@@ -336,19 +346,6 @@ mod tests {
         ];
         assert_eq!(windows_hash.other, slice_to_map(&windows_expected));
         assert_eq!(windows_tree.other, slice_to_map(&windows_expected));
-    }
-
-    fn file_to_vm(
-        path: &str,
-    ) -> (
-        super::Vm<HashMap<String, String>>,
-        super::Vm<BTreeMap<String, String>>,
-    ) {
-        let s = std::fs::read_to_string(path).unwrap();
-        (
-            serde_json::from_str(&s).unwrap(),
-            serde_json::from_str(&s).unwrap(),
-        )
     }
 
     fn slice_to_map<T: FromIterator<(String, String)>>(slice: &[(&str, &str)]) -> T {
