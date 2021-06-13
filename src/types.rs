@@ -70,14 +70,14 @@ pub enum Impossible {}
 mod tests {
     #[test]
     fn debian() {
-        let s = std::fs::read_to_string("test_data/snapshot/debian_10.json").unwrap();
+        let s = include_str!("../test_data/snapshot/debian_10.json");
         let debian_snapshot: super::Snapshot = serde_json::from_str(&s).unwrap();
 
         assert_eq!(debian_snapshot.id.0, "deadbeaf-dead-beaf-dead-beafdeadbea0");
         assert_eq!(debian_snapshot.name_label, "[XO My Backup Job] debian 10");
         assert_eq!(debian_snapshot.name_description, "");
 
-        let s = std::fs::read_to_string("test_data/snapshot/pfsense_2_5_1.json").unwrap();
+        let s = include_str!("../test_data/snapshot/pfsense_2_5_1.json");
         let pfsense_snapshot: super::Snapshot = serde_json::from_str(&s).unwrap();
 
         assert_eq!(
