@@ -1,0 +1,111 @@
+
+{
+  "type": "VM-snapshot",
+  "addresses": {
+    "0/ipv4/0": "10.0.0.13 10.0.0.12 10.0.0.16 10.0.0.7",
+    "0/ipv4/1": "10.0.0.12",
+    "0/ipv4/2": "10.0.0.16",
+    "0/ipv4/3": "10.0.0.7",
+    "1/ipv4/0": "192.168.71.2 192.168.71.1",
+    "1/ipv4/1": "192.168.71.1",
+    "2/ipv4/0": "192.168.72.2 192.168.72.1",
+    "2/ipv4/1": "192.168.72.1"
+},
+"affinityHost": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+  "auto_poweron": true,
+  "bios_strings": {
+    "bios-vendor": "Xen",
+    "bios-version": "",
+    "system-manufacturer": "Xen",
+    "system-product-name": "HVM domU",
+    "system-version": "",
+    "system-serial-number": "",
+    "baseboard-manufacturer": "",
+    "baseboard-product-name": "",
+    "baseboard-version": "",
+    "baseboard-serial-number": "",
+    "baseboard-asset-tag": "",
+    "baseboard-location-in-chassis": "",
+    "enclosure-asset-tag": "",
+    "hp-rombios": "",
+    "oem-1": "Xen",
+    "oem-2": "MS_VM_CERT/SHA1/deadbeafdeadbeafdeadbeafdeadbeafdeadbeaf"
+  },
+  "blockedOperations": {},
+  "boot": {
+    "firmware": "uefi",
+    "order": "cd"
+  },
+  "CPUs": {
+    "max": 2,
+    "number": 2
+  },
+  "current_operations": {},
+  "expNestedHvm": false,
+  "mainIpAddress": "10.0.0.13 10.0.0.12 10.0.0.16 10.0.0.7",
+  "high_availability": "",
+  "memory": {
+    "dynamic": [
+      1073741824,
+      1073741824
+    ],
+    "static": [
+      134217728,
+      1073741824
+    ],
+    "size": 1073741824
+  },
+  "installTime": 1623463358,
+  "name_description": "Foo description",
+  "name_label": "[XO My Backup Job] pfsense 2.5.1",
+  "other": {
+    "xo:backup:exported": "true",
+    "xo:backup:deltaChainLength": "5",
+    "xo:backup:vm": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "xo:backup:job": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "xo:backup:schedule": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "xo:backup:datetime": "20210612T02:02:38Z",
+    "import_task": "OpaqueRef:deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "auto_poweron": "true",
+    "base_template_name": "Other install media",
+    "mac_seed": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+    "install-methods": "cdrom",
+    "xo:copy_of": "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+  },
+  "os_version": {
+    "name": "FreeBSD 12.2-STABLE",
+    "uname": "12.2-STABLE",
+    "distro": "FreeBSD"
+  },
+  "power_state": "Halted",
+  "hasVendorDevice": false,
+  "snapshots": [],
+  "startDelay": 0,
+  "startTime": 1620682623,
+  "secureBoot": false,
+  "tags": [
+    "pfsense",
+    "Test"
+],
+  "VIFs": [
+    "deadbeaf-dead-beaf-dead-beafdeadbeaa",
+    "deadbeaf-dead-beaf-dead-beafdeadbeab",
+    "deadbeaf-dead-beaf-dead-beafdeadbeac"
+],
+  "virtualizationMode": "hvm",
+  "$container": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+  "$VBDs": [
+    "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+  ],
+  "VGPUs": [],
+  "$VGPUs": [],
+  "vga": "cirrus",
+  "videoram": 4,
+  "coresPerSocket": 2,
+  "snapshot_time": 1623463357,
+  "$snapshot_of": "deadbeaf-dead-beaf-dead-beafdeadbea1",
+  "id": "deadbeaf-dead-beaf-dead-beafdeadbea1",
+  "uuid": "deadbeaf-dead-beaf-dead-beafdeadbea1",
+  "$pool": "deadbeaf-dead-beaf-dead-beafdeadbeaf",
+  "$poolId": "deadbeaf-dead-beaf-dead-beafdeadbeaf"
+}
