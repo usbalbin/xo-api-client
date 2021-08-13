@@ -1,10 +1,11 @@
 use std::{array, collections::BTreeMap};
 
-use jsonrpsee_ws_client::{
+use jsonrpsee_types::{
     traits::{Client as RpcCient, SubscriptionClient},
     v2::params::JsonRpcParams,
-    DeserializeOwned, JsonValue, Subscription, WsClient, WsClientBuilder,
+    DeserializeOwned, JsonValue, Subscription,
 };
+use jsonrpsee_ws_client::{WsClient, WsClientBuilder};
 
 use crate::{
     credentials::{Credentials, Token},

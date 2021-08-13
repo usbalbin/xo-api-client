@@ -1,4 +1,4 @@
-use jsonrpsee_ws_client::JsonValue;
+use jsonrpsee_types::JsonValue;
 
 /// Object type
 ///
