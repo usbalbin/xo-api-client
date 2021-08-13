@@ -1,8 +1,7 @@
 use std::{collections::BTreeMap, str::FromStr};
 
-use jsonrpsee_ws_client::JsonValue;
-
 use crate::types::Impossible;
+use jsonrpsee_types::JsonValue;
 
 /// Login token used to authenticate with Xen Orchestra's API
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]

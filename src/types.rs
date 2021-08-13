@@ -1,6 +1,6 @@
-use jsonrpsee_ws_client::JsonValue;
+use jsonrpsee_types::JsonValue;
 
-pub use jsonrpsee_ws_client::Subscription;
+pub use jsonrpsee_types::Subscription;
 
 /// Unique id of a virtual machine
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
