@@ -1,4 +1,6 @@
-use std::collections::BTreeMap;
+use futures::{StreamExt, TryStreamExt};
+
+use std::collections::{BTreeMap, HashMap};
 
 use jsonrpsee_types::{
     traits::{Client as RpcCient, SubscriptionClient},
@@ -11,7 +13,8 @@ use crate::{
     credentials::{Credentials, Token},
     procedure_args, procedure_object,
     types::{
-        Vbd, VbdId, Vdi, VdiId, Vif, VifId, VmOrSnapshotId,
+        CloudConfigId, NetworkConfigId, PartialVdi, PartialVif, Template, TemplateId, Vbd, VbdId,
+        Vdi, VdiId, Vif, VifId, VmOrSnapshotId,
     },
     vm::OtherInfo,
     ObjectType, RpcError, Snapshot, SnapshotId, Vm, VmId,
@@ -331,7 +334,224 @@ impl Client {
         Ok(())
     }
 
+    /// xo-cli: vm.create
+    ///             [affinityHost=<string>]
+    ///             [bootAfterCreate=<boolean>]
+    ///             [cloudConfig=<string>]
+    ///             [networkConfig=<string>]
+    ///             [coreOs=<boolean>]
+    ///             [clone=<boolean>]
+    ///             [coresPerSocket=<string|number>]
+    ///             [resourceSet=<string>]
+    ///             [installation=<object>]
+    ///             [vgpuType=<string>]
+    ///             [gpuGroup=<string>]
+    ///             name_label=<string>
+    ///             [name_description=<string>]
+    ///             [pv_args=<string>]
+    ///             [share=<boolean>]
+    ///             template=<string>
+    ///             [VIFs=<array>]
+    ///             [VDIs=<array>]
+    ///             [existingDisks=<object>]
+    ///             [hvmBootFirmware=<string>]
+    ///             [copyHostBiosStrings=<boolean>] *=<any>
+    pub async fn create_vm() {}
+    /*pub async fn create_vm(name_label: String, template: &Template, cloud_config: Option<CloudConfigId>) -> Result<VmId, RpcError> {
+
+        let data = serde_json::json!({
+            //affinityHost: state.affinityHost && state.affinityHost.id,
+            clone: true,
+            existingDisks: existing_disks,
+            //installation,
+            name_label: name_label,
+            template: template.id,
+            VDIs: VDIs,
+            VIFs: vifs,
+            //resourceSet: resourceSet && resourceSet.id,
+            // vm.set parameters
+            coresPerSocket: state.coresPerSocket, // TODO: convert coresPerSocket === null to undefined
+            CPUs: state.CPUs,
+            //cpusMax: this._getCpusMax(),
+            //cpuWeight: state.cpuWeight === '' ? null : state.cpuWeight,
+            //cpuCap: state.cpuCap === '' ? null : state.cpuCap,
+            name_description: state.name_description,
+            memory: memory,
+            //memoryMax: memoryDynamicMax,
+            //memoryMin: memoryDynamicMin,
+            //memoryStaticMax,
+            //pv_args: state.pv_args,
+            autoPoweron: state.autoPoweron,
+            bootAfterCreate: state.bootAfterCreate,
+            //copyHostBiosStrings:
+            //    state.hvmBootFirmware !== 'uefi' && !this._templateHasBiosStrings() && state.copyHostBiosStrings,
+            //secureBoot: state.secureBoot,
+            //share: state.share,
+            cloudConfig: cloudConfig,
+            networkConfig: /*this._isCoreOs() ? undefined :*/ networkConfig,
+            //coreOs: this._isCoreOs(),
+            tags: state.tags,
+            //vgpuType: get(() => state.vgpuType.id),
+            //gpuGroup: get(() => state.vgpuType.gpuGroup),
+            //hvmBootFirmware: state.hvmBootFirmware === '' ? undefined : state.hvmBootFirmware,
+        });
+    }*/
 }
 
+#[derive(serde::Serialize)]
+struct NewVmArgs {
+    //affinityHost: state.affinityHost && state.affinityHost.id,
+    clone: Option<bool>,
+
+    #[serde(rename = "existingDisks")]
+    existing_disks: Vec<PartialVdi>,
+    //installation,
+    name_label: String,
+    template: TemplateId,
+
+    #[serde(rename = "VDIs")]
+    vdis: Vec<PartialVdi>,
+
+    #[serde(rename = "VIFs")]
+    vifs: HashMap<usize, PartialVif>,
+    //resourceSet: resourceSet && resourceSet.id,
+    // vm.set parameters
+    #[serde(rename = "coresPerSocket")]
+    cores_per_socket: Option<usize>, // TODO: convert coresPerSocket === null to undefined
+
+    #[serde(rename = "CPUs")]
+    cpus: Option<usize>,
+    //cpusMax: this._getCpusMax(),
+    //cpuWeight: state.cpuWeight === '' ? null : state.cpuWeight,
+    //cpuCap: state.cpuCap === '' ? null : state.cpuCap,
+    name_description: String,
+    //memory: memory,
+    //memoryMax: memoryDynamicMax,
+    //memoryMin: memoryDynamicMin,
+    //memoryStaticMax,
+    //pv_args: state.pv_args,
+    #[serde(rename = "autoPoweron")]
+    auto_poweron: Option<bool>,
+
+    #[serde(rename = "bootAfterCreate")]
+    boot_after_create: Option<bool>,
+    //copyHostBiosStrings:
+    //    state.hvmBootFirmware !== 'uefi' && !this._templateHasBiosStrings() && state.copyHostBiosStrings,
+    //secureBoot: state.secureBoot,
+    //share: state.share,
+    #[serde(rename = "cloudConfig")]
+    cloud_config: Option<CloudConfigId>,
+
+    #[serde(rename = "networkConfig")]
+    network_config: Option<NetworkConfigId>,
+    //coreOs: this._isCoreOs(),
+    tags: Vec<String>,
+    //vgpuType: get(() => state.vgpuType.id),
+    //gpuGroup: get(() => state.vgpuType.gpuGroup),
+    //hvmBootFirmware: state.hvmBootFirmware === '' ? undefined : state.hvmBootFirmware,
+}
+
+impl NewVmArgs {
+    pub fn new_raw(name_label: String, template: TemplateId) -> Self {
+        NewVmArgs {
+            name_label,
+            template,
+
+            clone: None,
+
+            existing_disks: Vec::new(),
+
+            vdis: Vec::new(),
+
+            vifs: HashMap::new(),
+            cores_per_socket: None,
+            cpus: None,
+
+            name_description: String::new(),
+
+            auto_poweron: None,
+            boot_after_create: None,
+            cloud_config: None,
+            network_config: None,
+            tags: Vec::new(),
+        }
+    }
+
+    pub async fn new(name_label: String, template: &Template, con: &Client) -> Self {
+        let this = Self::new_raw(name_label, template.id.clone());
+
+        let existingDisks: Result<HashMap<usize, PartialVdi>, _> =
+            futures::stream::iter(&template.vbds)
+                .filter_map(|vbd_id| async move {
+                    let vbd = match con
+                        .get_vbds(Some(procedure_object! { "id" => vbd_id.0.clone() }), None)
+                        .await
+                        .map(|mut m| m.remove(vbd_id).expect("Templates with dangling VBD"))
+                    {
+                        Ok(vbd) if !vbd.is_cd_drive => vbd,
+                        Ok(_) => return None,
+                        Err(e) => return Some(Err(e)),
+                    };
+
+                    let vdi = match con
+                        .get_vdis(Some(procedure_object! { "id" => vbd.vdi.0.clone() }), None)
+                        .await
+                        .map(|mut m| m.remove(&vbd.vdi).expect("VBD with dangling VDI"))
+                    {
+                        Ok(vdi) => vdi,
+                        Err(e) => return Some(Err(e)),
+                    };
+
+                    Some(Ok((
+                        vbd.position,
+                        PartialVdi {
+                            name_label: vdi.name_label,
+                            name_description: vdi.name_description,
+                            size: vdi.size,
+                            sr: vdi.sr,
+                        },
+                    )))
+                })
+                .try_collect()
+                .await;
+        /*
+        forEach(template.vbds, |vbdId| {
+            // VbdId -> Vbd, Vbd.VdiId -> Vdi
+
+            const vbd = getObject(storeState, vbdId, resourceSet)
+            if (!vbd || vbd.is_cd_drive) {
+                return
+            }
+            const vdi = getObject(storeState, vbd.VDI, resourceSet)
+            if (vdi) {
+                existingDisks.insert(vbd.position, PartialVdi {
+                    name_label: vdi.name_label,
+                    name_description: vdi.name_description,
+                    size: vdi.size,
+                    sr: vdi.sr,
+                });
+            }
+        });*/
+
+        let vifs: Result<Vec<PartialVif>, _> = futures::stream::iter(&template.vifs)
+            .filter_map(|(_, vif_id)| async move {
+                let response = con
+                    .get_vifs(procedure_object! { "id" => vif_id.clone() }, None)
+                    .await;
+                let vif = match response {
+                    Ok(mut response) => response.remove(&vif_id).expect("Template with orphan VIF"),
+                    Err(e) => return Some(Err(e)),
+                };
+
+                Some(Ok(PartialVif {
+                    network: vif.network,
+                }))
+            })
+            .try_collect()
+            .await;
+
+        todo!()
+    }
+}
 #[derive(serde::Deserialize)]
 struct SigninResponse {}

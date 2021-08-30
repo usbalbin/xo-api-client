@@ -115,6 +115,21 @@ pub struct Snapshot {
     pub name_description: String,
 }
 
+#[derive(serde::Serialize)]
+pub(crate) struct PartialVdi {
+    pub(crate) name_description: String,
+    pub(crate) name_label: String,
+    pub(crate) size: usize,
+
+    #[serde(rename = "$SR")]
+    pub(crate) sr: SrId,
+}
+
+#[derive(serde::Serialize)]
+pub(crate) struct PartialVif {
+    pub(crate) network: NetworkId,
+}
+
 #[derive(serde::Deserialize)]
 pub struct Vdi {
     id: VdiId,
