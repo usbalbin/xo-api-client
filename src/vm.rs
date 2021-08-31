@@ -7,6 +7,8 @@ use crate::VmId;
 /// Note that the "other" property contains a lot of different data. In the Xen Orchestra the user may
 /// even add additional values. For this reason the struct is made generic over the type `O`.
 /// See the trait [`OtherInfo`] for more info
+///
+/// Also see https://github.com/vatesfr/xen-orchestra/blob/a505cd9567233aab7ca6488b2fb8a0b6c610fa08/packages/xo-server/src/xapi-object-to-xo.mjs#L273
 #[derive(serde::Deserialize, Debug)]
 pub struct Vm<O> {
     pub id: VmId,
