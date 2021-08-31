@@ -10,7 +10,9 @@ use jsonrpsee_ws_client::{WsClient, WsClientBuilder};
 use crate::{
     credentials::{Credentials, Token},
     procedure_args, procedure_object,
-    types::VmOrSnapshotId,
+    types::{
+        Vbd, VbdId, Vdi, VdiId, Vif, VifId, VmOrSnapshotId,
+    },
     vm::OtherInfo,
     ObjectType, RpcError, Snapshot, SnapshotId, Vm, VmId,
 };
@@ -224,6 +226,9 @@ impl Client {
     }
 
     declare_object_getter!(ObjectType::VmSnapshot, fn get_snapshots : SnapshotId => Snapshot);
+    declare_object_getter!(ObjectType::Vbd, fn get_vbds : VbdId => Vbd);
+    declare_object_getter!(ObjectType::Vdi, fn get_vdis : VdiId => Vdi);
+    declare_object_getter!(ObjectType::Vif, fn get_vifs : VifId => Vif);
 
     /// This function will try to initiate a soft restart of the VM
     /// The there is no guarantee that the VM has started once the returned
@@ -325,6 +330,7 @@ impl Client {
 
         Ok(())
     }
+
 }
 
 #[derive(serde::Deserialize)]
