@@ -1,4 +1,4 @@
-use std::{array, collections::BTreeMap};
+use std::collections::BTreeMap;
 
 use jsonrpsee_types::{
     traits::{Client as RpcCient, SubscriptionClient},
@@ -9,10 +9,32 @@ use jsonrpsee_ws_client::{WsClient, WsClientBuilder};
 
 use crate::{
     credentials::{Credentials, Token},
+    procedure_args, procedure_object,
     types::VmOrSnapshotId,
     vm::OtherInfo,
     ObjectType, RpcError, Snapshot, SnapshotId, Vm, VmId,
 };
+
+macro_rules! declare_object_getter {
+    ($item_type_enum:expr, fn $fn_name:ident : $index_type:ident => $item_type:ty) => {
+        /// Get all $item_type s from server
+        /// * `filter` is an optional filter
+        /// * `limit` is an optional max limit on number of results
+        pub async fn $fn_name(
+            &self,
+            filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
+            limit: impl Into<Option<usize>>,
+        ) -> Result<BTreeMap<$index_type, $item_type>, RpcError> {
+            // ::<BTreeMap<$index_type, $item_type>>
+            self.get_objects_of_type/*::<BTreeMap<$index_type, $item_type>>*/(
+                $item_type_enum,
+                filter,
+                limit,
+            )
+            .await
+        }
+    };
+}
 
 /// Error during restart of VM
 #[derive(Debug)]
@@ -153,11 +175,11 @@ impl Client {
     ) -> Result<R, RpcError> {
         let args = match (filter.into(), limit.into()) {
             (Some(filter), Some(limit)) => {
-                array::IntoIter::new([("filter", filter.into()), ("limit", limit.into())]).collect()
+                procedure_args! { "filter" => filter, "limit" => limit }
             }
-            (Some(filter), None) => array::IntoIter::new([("filter", filter.into())]).collect(),
-            (None, Some(limit)) => array::IntoIter::new([("limit", limit.into())]).collect(),
-            (None, None) => array::IntoIter::new([]).collect(),
+            (Some(filter), None) => procedure_args! { "filter" => filter },
+            (None, Some(limit)) => procedure_args! { "limit" => limit },
+            (None, None) => procedure_args! {},
         };
 
         self.inner
@@ -173,15 +195,15 @@ impl Client {
     pub async fn get_objects_of_type<R: serde::de::DeserializeOwned>(
         &self,
         object_type: ObjectType,
-        filter: Option<serde_json::Map<String, JsonValue>>,
-        limit: Option<usize>,
+        filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
+        limit: impl Into<Option<usize>>,
     ) -> Result<R, RpcError> {
-        let filter = match filter {
+        let filter = match filter.into() {
             Some(mut filter) => {
                 filter.insert("type".to_string(), object_type.into());
                 filter
             }
-            None => array::IntoIter::new([("type".to_owned(), object_type.into())]).collect(),
+            None => procedure_object! { "type" => object_type },
         };
 
         let objects = self.get_all_objects(filter, limit).await?;
@@ -194,28 +216,14 @@ impl Client {
     /// * `limit` is an optional max limit on number of results
     pub async fn get_vms<O: OtherInfo>(
         &self,
-        filter: Option<serde_json::Map<String, JsonValue>>,
-        limit: Option<usize>,
+        filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
+        limit: impl Into<Option<usize>>,
     ) -> Result<BTreeMap<VmId, Vm<O>>, RpcError> {
-        self.get_objects_of_type::<BTreeMap<VmId, Vm<O>>>(ObjectType::Vm, filter, limit)
+        self.get_objects_of_type/*::<BTreeMap<VmId, Vm<O>>>*/(ObjectType::Vm, filter, limit)
             .await
     }
 
-    /// Get all VM snapshots from server
-    /// * `filter` is an optional filter
-    /// * `limit` is an optional max limit on number of results
-    pub async fn get_snapshots(
-        &self,
-        filter: Option<serde_json::Map<String, JsonValue>>,
-        limit: Option<usize>,
-    ) -> Result<BTreeMap<SnapshotId, Snapshot>, RpcError> {
-        self.get_objects_of_type::<BTreeMap<SnapshotId, Snapshot>>(
-            ObjectType::VmSnapshot,
-            filter,
-            limit,
-        )
-        .await
-    }
+    declare_object_getter!(ObjectType::VmSnapshot, fn get_snapshots : SnapshotId => Snapshot);
 
     /// This function will try to initiate a soft restart of the VM
     /// The there is no guarantee that the VM has started once the returned
@@ -227,7 +235,7 @@ impl Client {
         #[serde(transparent)]
         struct RestartResult(bool);
 
-        let params = array::IntoIter::new([("id", vm_id.into())]).collect();
+        let params = procedure_args! { "id" => vm_id };
 
         let restart_suceeded: RestartResult = self
             .inner
@@ -256,13 +264,12 @@ impl Client {
         description: String,
         save_memory: bool,
     ) -> Result<SnapshotId, RpcError> {
-        let params = array::IntoIter::new([
-            ("id", vm_id.into()),
-            ("name", name.into()),
-            ("description", description.into()),
-            ("saveMemory", save_memory.into()),
-        ])
-        .collect();
+        let params = procedure_args! {
+            "id" => vm_id,
+            "name" => name,
+            "description" => description,
+            "saveMemory"=> save_memory,
+        };
 
         self.inner
             .request("vm.snapshot", JsonRpcParams::Map(params))
@@ -281,7 +288,7 @@ impl Client {
         #[serde(transparent)]
         struct RevertResult(bool);
 
-        let params = array::IntoIter::new([("snapshot", snapshot_id.clone().into())]).collect();
+        let params = procedure_args! { "snapshot" => snapshot_id.clone() };
 
         let revert_result = self
             .inner
@@ -310,7 +317,7 @@ impl Client {
 
         let vm_or_snapshot_id = vm_or_snapshot_id.into();
 
-        let params = array::IntoIter::new([("id", vm_or_snapshot_id.into())]).collect();
+        let params = procedure_args! { "id" => vm_or_snapshot_id };
 
         self.inner
             .request::<DeleteResult>("vm.delete", JsonRpcParams::Map(params))

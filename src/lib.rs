@@ -2,6 +2,9 @@ mod client;
 pub mod credentials;
 mod object_type;
 mod types;
+
+#[macro_use]
+mod macros;
 pub mod vm;
 
 pub use client::{Client, RestartError, RevertSnapshotError};
