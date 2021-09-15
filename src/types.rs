@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use jsonrpsee_types::JsonValue;
 
 pub use jsonrpsee_types::Subscription;
@@ -11,6 +9,22 @@ macro_rules! impl_to_json_value {
                 JsonValue::String(val.0)
             }
         }
+    };
+}
+
+macro_rules! impl_from_str {
+    ($t:path) => {
+        impl From<&str> for $t {
+            fn from(s: &str) -> Self {
+                $t(s.to_string())
+            }
+        }
+        impl From<String> for $t {
+            fn from(s: String) -> Self {
+                $t(s)
+            }
+        }
+        impl_to_json_value!($t);
     };
 }
 
@@ -48,13 +62,15 @@ impl From<VmId> for VmOrSnapshotId {
 #[serde(transparent)]
 pub struct TemplateId(pub(crate) String);
 
+impl_from_str!(TemplateId);
+
 /// See https://github.com/vatesfr/xen-orchestra/blob/a505cd9567233aab7ca6488b2fb8a0b6c610fa08/packages/xo-server/src/xapi-object-to-xo.mjs#L273
 #[derive(serde::Deserialize)]
 pub struct Template {
     pub id: TemplateId,
 
     #[serde(rename = "VIFs")]
-    pub(crate) vifs: HashMap<usize, VifId>,
+    pub(crate) vifs: Vec<VifId>,
 
     #[serde(rename = "$VBDs")]
     pub(crate) vbds: Vec<VbdId>,
@@ -130,62 +146,68 @@ pub(crate) struct PartialVif {
     pub(crate) network: NetworkId,
 }
 
+#[non_exhaustive]
 #[derive(serde::Deserialize)]
 pub struct Vdi {
-    id: VdiId,
+    pub id: VdiId,
 
     //type: 'VDI' | 'VDI-unmanaged' | 'VDI-snapshot',
-    missing: bool,
-    pub(crate) name_description: String,
-    pub(crate) name_label: String,
+    pub missing: bool,
+    pub name_description: String,
+    pub name_label: String,
     //parent: Vdi or VdiUnmanaged?,
-    pub(crate) size: usize,
-    //snapshots: Vec<VdiSnapshot>,
-    //tags: Vec<String>,
-    usage: usize,
+    pub size: usize,
+    // snapshots: Vec<VdiSnapshot>,
+    pub tags: Vec<String>,
+    pub usage: usize,
     //VDI_type: String,
-    //current_operations: Vec<IdOfOperations>,
+    // current_operations: Vec<IdOfOperations>,
     #[serde(rename = "$SR")]
-    pub(crate) sr: SrId,
+    pub sr: SrId,
 
     #[serde(rename = "$VBDs")]
-    vbds: Vec<VbdId>,
+    pub vbds: Vec<VbdId>,
 }
 
 #[derive(serde::Deserialize)]
 pub struct Vbd {
-    id: VbdId,
+    pub id: VbdId,
     //type: 'VBD',
-    attached: bool,
-    bootable: bool,
-    device: Option<String>, //xvda, xvdb etc.
-    pub(crate) is_cd_drive: bool,
-    pub(crate) position: usize,
-    read_only: bool,
+    pub attached: bool,
+    pub bootable: bool,
+    pub device: Option<String>, //xvda, xvdb etc.
+    pub is_cd_drive: bool,
+
+    #[serde(with = "serde_with::rust::display_fromstr")]
+    pub position: usize,
+    pub read_only: bool,
 
     #[serde(rename = "VDI")]
-    pub(crate) vdi: VdiId,
+    pub vdi: VdiId,
 
     #[serde(rename = "VM")]
-    vm: VmId,
+    pub vm: VmId,
 }
 
 #[derive(serde::Deserialize)]
 pub struct Vif {
-    id: VifId,
+    pub id: VifId,
     //type: 'VIF',
 
     //allowedIpv4Addresses: obj.ipv4_allowed,
     //allowedIpv6Addresses: obj.ipv6_allowed,
-    attached: bool,
-    //device: obj.device, // TODO: should it be cast to a number?
+    pub attached: bool,
+    //device: obj.device, // (comment by XO) TODO: should it be cast to a number?
     //lockingMode: obj.locking_mode,
-    //MAC: String,
-    //MTU: usize,
+    #[serde(rename = "MAC")]
+    pub mac: String,
+
+    #[serde(rename = "MTU")]
+    pub mtu: u16,
     //other_config: obj.other_config,
 
-    // See: https://xapi-project.github.io/xen-api/networking.html
-    txChecksumming: bool,
+    // // See: https://xapi-project.github.io/xen-api/networking.html
+    // txChecksumming: bool,
 
     // in kB/s
     //rateLimit:
@@ -193,7 +215,7 @@ pub struct Vif {
     pub(crate) network: NetworkId,
 
     #[serde(rename = "$VM")]
-    vm: VmId,
+    pub vm: VmId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

@@ -203,13 +203,8 @@ impl Client {
         filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
         limit: impl Into<Option<usize>>,
     ) -> Result<R, RpcError> {
-        let filter = match filter.into() {
-            Some(mut filter) => {
-                filter.insert("type".to_string(), object_type.into());
-                filter
-            }
-            None => procedure_object! { "type" => object_type },
-        };
+        let mut filter = filter.into().unwrap_or_default();
+        filter.insert("type".to_string(), object_type.into());
 
         let objects = self.get_all_objects(filter, limit).await?;
 
@@ -227,7 +222,7 @@ impl Client {
         self.get_objects_of_type/*::<BTreeMap<VmId, Vm<O>>>*/(ObjectType::Vm, filter, limit)
             .await
     }
-
+    declare_object_getter!(ObjectType::VmTemplate, fn get_template : TemplateId => Template);
     declare_object_getter!(ObjectType::VmSnapshot, fn get_snapshots : SnapshotId => Snapshot);
     declare_object_getter!(ObjectType::Vbd, fn get_vbds : VbdId => Vbd);
     declare_object_getter!(ObjectType::Vdi, fn get_vdis : VdiId => Vdi);
@@ -356,55 +351,35 @@ impl Client {
     ///             [existingDisks=<object>]
     ///             [hvmBootFirmware=<string>]
     ///             [copyHostBiosStrings=<boolean>] *=<any>
-    pub async fn create_vm() {}
-    /*pub async fn create_vm(name_label: String, template: &Template, cloud_config: Option<CloudConfigId>) -> Result<VmId, RpcError> {
+    pub async fn create_vm(&self, params: NewVmArgs) -> Result<VmId, RpcError> {
+        // TODO: Find a better solution to this. Currently we go from
+        // NewVmArgs -> JsonValue ->
+        // serde::Map -> BTreeMap<&str, JsonValue>
+        // which is less than optimal...
+        let params = serde_json::to_value(params).unwrap();
+        let params = match &params {
+            JsonValue::Object(params) => params
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.clone()))
+                .collect(),
+            _ => unreachable!(),
+        };
 
-        let data = serde_json::json!({
-            //affinityHost: state.affinityHost && state.affinityHost.id,
-            clone: true,
-            existingDisks: existing_disks,
-            //installation,
-            name_label: name_label,
-            template: template.id,
-            VDIs: VDIs,
-            VIFs: vifs,
-            //resourceSet: resourceSet && resourceSet.id,
-            // vm.set parameters
-            coresPerSocket: state.coresPerSocket, // TODO: convert coresPerSocket === null to undefined
-            CPUs: state.CPUs,
-            //cpusMax: this._getCpusMax(),
-            //cpuWeight: state.cpuWeight === '' ? null : state.cpuWeight,
-            //cpuCap: state.cpuCap === '' ? null : state.cpuCap,
-            name_description: state.name_description,
-            memory: memory,
-            //memoryMax: memoryDynamicMax,
-            //memoryMin: memoryDynamicMin,
-            //memoryStaticMax,
-            //pv_args: state.pv_args,
-            autoPoweron: state.autoPoweron,
-            bootAfterCreate: state.bootAfterCreate,
-            //copyHostBiosStrings:
-            //    state.hvmBootFirmware !== 'uefi' && !this._templateHasBiosStrings() && state.copyHostBiosStrings,
-            //secureBoot: state.secureBoot,
-            //share: state.share,
-            cloudConfig: cloudConfig,
-            networkConfig: /*this._isCoreOs() ? undefined :*/ networkConfig,
-            //coreOs: this._isCoreOs(),
-            tags: state.tags,
-            //vgpuType: get(() => state.vgpuType.id),
-            //gpuGroup: get(() => state.vgpuType.gpuGroup),
-            //hvmBootFirmware: state.hvmBootFirmware === '' ? undefined : state.hvmBootFirmware,
-        });
-    }*/
+        let response = self.inner
+            .request::</*CreateResult*/JsonValue>("vm.create", JsonRpcParams::Map(params))
+            .await?;
+        println!("response: {:?}", response);
+        todo!()
+    }
 }
 
 #[derive(serde::Serialize)]
-struct NewVmArgs {
+pub struct NewVmArgs {
     //affinityHost: state.affinityHost && state.affinityHost.id,
     clone: Option<bool>,
 
     #[serde(rename = "existingDisks")]
-    existing_disks: Vec<PartialVdi>,
+    existing_disks: HashMap<usize, PartialVdi>,
     //installation,
     name_label: String,
     template: TemplateId,
@@ -413,7 +388,7 @@ struct NewVmArgs {
     vdis: Vec<PartialVdi>,
 
     #[serde(rename = "VIFs")]
-    vifs: HashMap<usize, PartialVif>,
+    vifs: Vec<PartialVif>,
     //resourceSet: resourceSet && resourceSet.id,
     // vm.set parameters
     #[serde(rename = "coresPerSocket")]
@@ -459,11 +434,11 @@ impl NewVmArgs {
 
             clone: None,
 
-            existing_disks: Vec::new(),
+            existing_disks: HashMap::new(),
 
             vdis: Vec::new(),
 
-            vifs: HashMap::new(),
+            vifs: Vec::new(),
             cores_per_socket: None,
             cpus: None,
 
@@ -477,43 +452,49 @@ impl NewVmArgs {
         }
     }
 
-    pub async fn new(name_label: String, template: &Template, con: &Client) -> Self {
-        let this = Self::new_raw(name_label, template.id.clone());
+    pub async fn new(
+        name_label: String,
+        template: &Template,
+        con: &Client,
+    ) -> Result<Self, RpcError> {
+        let mut this = Self::new_raw(name_label, template.id.clone());
 
-        let existingDisks: Result<HashMap<usize, PartialVdi>, _> =
-            futures::stream::iter(&template.vbds)
-                .filter_map(|vbd_id| async move {
-                    let vbd = match con
-                        .get_vbds(Some(procedure_object! { "id" => vbd_id.0.clone() }), None)
-                        .await
-                        .map(|mut m| m.remove(vbd_id).expect("Templates with dangling VBD"))
-                    {
-                        Ok(vbd) if !vbd.is_cd_drive => vbd,
-                        Ok(_) => return None,
-                        Err(e) => return Some(Err(e)),
-                    };
+        let existing_disks: HashMap<usize, PartialVdi> = futures::stream::iter(&template.vbds)
+            .filter_map(|vbd_id| async move {
+                println!("vbd");
+                let vbd = match con
+                    .get_vbds(procedure_object! { "id" => vbd_id.0.clone() }, None)
+                    .await
+                {
+                    Ok(mut r) => r.remove(&vbd_id)?,
+                    Err(e) => return Some(Err(e)),
+                };
 
-                    let vdi = match con
-                        .get_vdis(Some(procedure_object! { "id" => vbd.vdi.0.clone() }), None)
-                        .await
-                        .map(|mut m| m.remove(&vbd.vdi).expect("VBD with dangling VDI"))
-                    {
-                        Ok(vdi) => vdi,
-                        Err(e) => return Some(Err(e)),
-                    };
+                if vbd.is_cd_drive {
+                    return None;
+                };
 
-                    Some(Ok((
-                        vbd.position,
-                        PartialVdi {
-                            name_label: vdi.name_label,
-                            name_description: vdi.name_description,
-                            size: vdi.size,
-                            sr: vdi.sr,
-                        },
-                    )))
-                })
-                .try_collect()
-                .await;
+                println!("vdi");
+                let vdi = match con
+                    .get_vdis(procedure_object! { "id" => vbd.vdi.0.clone() }, None)
+                    .await
+                {
+                    Ok(mut r) => r.remove(&vbd.vdi)?,
+                    Err(e) => return Some(Err(e)),
+                };
+
+                Some(Ok((
+                    vbd.position,
+                    PartialVdi {
+                        name_label: vdi.name_label,
+                        name_description: vdi.name_description,
+                        size: vdi.size,
+                        sr: vdi.sr,
+                    },
+                )))
+            })
+            .try_collect()
+            .await?;
         /*
         forEach(template.vbds, |vbdId| {
             // VbdId -> Vbd, Vbd.VdiId -> Vdi
@@ -533,24 +514,44 @@ impl NewVmArgs {
             }
         });*/
 
-        let vifs: Result<Vec<PartialVif>, _> = futures::stream::iter(&template.vifs)
-            .filter_map(|(_, vif_id)| async move {
+        let vifs: Vec<PartialVif> = futures::stream::iter(&template.vifs)
+            .filter_map(|vif_id| async move {
+                println!("vifs");
                 let response = con
                     .get_vifs(procedure_object! { "id" => vif_id.clone() }, None)
                     .await;
+
                 let vif = match response {
-                    Ok(mut response) => response.remove(&vif_id).expect("Template with orphan VIF"),
+                    Ok(mut response) => response.remove(&vif_id)?,
                     Err(e) => return Some(Err(e)),
                 };
 
+                // TODO: Is it possible to avoid filter_map here
                 Some(Ok(PartialVif {
                     network: vif.network,
                 }))
             })
             .try_collect()
-            .await;
+            .await?;
 
-        todo!()
+        /*
+        let VIFs = []
+        const defaultNetworkIds = this._getDefaultNetworkIds(template)
+        forEach(template.VIFs, vifId => {
+            const vif = getObject(storeState, vifId, resourceSet)
+            VIFs.push({
+                network: pool || vif.$network
+            })
+        })
+        if (VIFs.length === 0) {
+            VIFs = defaultNetworkIds.map(id => ({ network: id }))
+        }
+        */
+
+        this.existing_disks = existing_disks;
+        this.vifs = vifs;
+
+        Ok(this)
     }
 }
 #[derive(serde::Deserialize)]
