@@ -466,7 +466,7 @@ impl NewVmArgs {
                     .get_vbds(procedure_object! { "id" => vbd_id.0.clone() }, None)
                     .await
                 {
-                    Ok(mut r) => r.remove(&vbd_id)?,
+                    Ok(mut r) => r.remove(vbd_id)?,
                     Err(e) => return Some(Err(e)),
                 };
 
@@ -522,7 +522,7 @@ impl NewVmArgs {
                     .await;
 
                 let vif = match response {
-                    Ok(mut response) => response.remove(&vif_id)?,
+                    Ok(mut response) => response.remove(vif_id)?,
                     Err(e) => return Some(Err(e)),
                 };
 
