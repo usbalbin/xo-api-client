@@ -13,7 +13,7 @@ use crate::{
     credentials::{Credentials, Token},
     procedure_args, procedure_object,
     types::{
-        CloudConfigId, NetworkConfigId, PartialVdi, PartialVif, Template, TemplateId, Vbd, VbdId,
+        PartialVdi, PartialVif, Template, TemplateId, Vbd, VbdId,
         Vdi, VdiId, Vif, VifId, VmOrSnapshotId,
     },
     vm::OtherInfo,
@@ -351,6 +351,7 @@ impl Client {
     ///             [existingDisks=<object>]
     ///             [hvmBootFirmware=<string>]
     ///             [copyHostBiosStrings=<boolean>] *=<any>
+    /// https://github.com/vatesfr/xen-orchestra/blob/5bb2767d62432756e8d9b317c81e5f60c6c663b7/packages/xo-server/src/api/vm.mjs#L47
     pub async fn create_vm(&self, params: NewVmArgs) -> Result<VmId, RpcError> {
         // TODO: Find a better solution to this. Currently we go from
         // NewVmArgs -> JsonValue ->
@@ -372,55 +373,219 @@ impl Client {
         todo!()
     }
 }
+/*
+{
+  affinityHost: { type: 'string', optional: true },
+
+  bootAfterCreate: {
+    type: 'boolean',
+    optional: true,
+  },
+
+  cloudConfig: {
+    type: 'string',
+    optional: true,
+  },
+
+  networkConfig: {
+    type: 'string',
+    optional: true,
+  },
+
+  coreOs: {
+    type: 'boolean',
+    optional: true,
+  },
+
+  clone: {
+    type: 'boolean',
+    optional: true,
+  },
+
+  coresPerSocket: {
+    type: ['string', 'number'],
+    optional: true,
+  },
+
+  resourceSet: {
+    type: 'string',
+    optional: true,
+  },
+
+  installation: {
+    type: 'object',
+    optional: true,
+    properties: {
+      method: { type: 'string' },
+      repository: { type: 'string' },
+    },
+  },
+
+  vgpuType: {
+    type: 'string',
+    optional: true,
+  },
+
+  gpuGroup: {
+    type: 'string',
+    optional: true,
+  },
+
+  // Name/description of the new VM.
+  name_label: { type: 'string' },
+  name_description: { type: 'string', optional: true },
+
+  // PV Args
+  pv_args: { type: 'string', optional: true },
+
+  share: {
+    type: 'boolean',
+    optional: true,
+  },
+
+  // TODO: add the install repository!
+  // VBD.insert/eject
+  // Also for the console!
+
+  // UUID of the template the VM will be created from.
+  template: { type: 'string' },
+
+  // Virtual interfaces to create for the new VM.
+  VIFs: {
+    optional: true,
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        // UUID of the network to create the interface in.
+        network: { type: 'string' },
+
+        mac: {
+          optional: true, // Auto-generated per default.
+          type: 'string',
+        },
+
+        allowedIpv4Addresses: {
+          optional: true,
+          type: 'array',
+          items: { type: 'string' },
+        },
+
+        allowedIpv6Addresses: {
+          optional: true,
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    },
+  },
+
+  // Virtual disks to create for the new VM.
+  VDIs: {
+    optional: true, // If not defined, use the template parameters.
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        size: { type: ['integer', 'string'] },
+        SR: { type: 'string' },
+        type: { type: 'string' },
+      },
+    },
+  },
+
+  // TODO: rename to *existingVdis* or rename *VDIs* to *disks*.
+  existingDisks: {
+    optional: true,
+    type: 'object',
+
+    // Do not for a type object.
+    items: {
+      type: 'object',
+      properties: {
+        size: {
+          type: ['integer', 'string'],
+          optional: true,
+        },
+        $SR: {
+          type: 'string',
+          optional: true,
+        },
+      },
+    },
+  },
+
+  hvmBootFirmware: { type: 'string', optional: true },
+
+  copyHostBiosStrings: { type: 'boolean', optional: true },
+
+  // other params are passed to `editVm`
+  '*': { type: 'any' },
+}
+*/
 
 #[derive(serde::Serialize)]
 pub struct NewVmArgs {
-    //affinityHost: state.affinityHost && state.affinityHost.id,
-    clone: Option<bool>,
-
-    #[serde(rename = "existingDisks")]
-    existing_disks: HashMap<usize, PartialVdi>,
-    //installation,
     name_label: String,
     template: TemplateId,
 
-    #[serde(rename = "VDIs")]
-    vdis: Vec<PartialVdi>,
+    //affinityHost: state.affinityHost && state.affinityHost.id,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    clone: Option<bool>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "existingDisks")]
+    existing_disks: Option<HashMap<usize, PartialVdi>>,
+    //installation,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "VDIs")]
+    vdis: Option<Vec<PartialVdi>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "VIFs")]
-    vifs: Vec<PartialVif>,
+    vifs: Option<Vec<PartialVif>>,
     //resourceSet: resourceSet && resourceSet.id,
     // vm.set parameters
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "coresPerSocket")]
-    cores_per_socket: Option<usize>, // TODO: convert coresPerSocket === null to undefined
+    cores_per_socket: Option<usize>,
 
+    /// Total CPU core count across all sockets
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "CPUs")]
-    cpus: Option<usize>,
+    total_core_count: Option<usize>,
+
     //cpusMax: this._getCpusMax(),
     //cpuWeight: state.cpuWeight === '' ? null : state.cpuWeight,
     //cpuCap: state.cpuCap === '' ? null : state.cpuCap,
-    name_description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name_description: Option<String>,
     //memory: memory,
     //memoryMax: memoryDynamicMax,
     //memoryMin: memoryDynamicMin,
     //memoryStaticMax,
     //pv_args: state.pv_args,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "autoPoweron")]
     auto_poweron: Option<bool>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "bootAfterCreate")]
     boot_after_create: Option<bool>,
     //copyHostBiosStrings:
     //    state.hvmBootFirmware !== 'uefi' && !this._templateHasBiosStrings() && state.copyHostBiosStrings,
     //secureBoot: state.secureBoot,
     //share: state.share,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "cloudConfig")]
-    cloud_config: Option<CloudConfigId>,
+    cloud_config: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "networkConfig")]
-    network_config: Option<NetworkConfigId>,
+    network_config: Option<String>,
     //coreOs: this._isCoreOs(),
-    tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tags: Option<Vec<String>>,
     //vgpuType: get(() => state.vgpuType.id),
     //gpuGroup: get(() => state.vgpuType.gpuGroup),
     //hvmBootFirmware: state.hvmBootFirmware === '' ? undefined : state.hvmBootFirmware,
@@ -434,21 +599,21 @@ impl NewVmArgs {
 
             clone: None,
 
-            existing_disks: HashMap::new(),
+            existing_disks: None,
 
-            vdis: Vec::new(),
+            vdis: None,
 
-            vifs: Vec::new(),
+            vifs: None,
             cores_per_socket: None,
-            cpus: None,
+            total_core_count: None,
 
-            name_description: String::new(),
+            name_description: None,
 
             auto_poweron: None,
             boot_after_create: None,
             cloud_config: None,
             network_config: None,
-            tags: Vec::new(),
+            tags: None,
         }
     }
 
@@ -548,8 +713,8 @@ impl NewVmArgs {
         }
         */
 
-        this.existing_disks = existing_disks;
-        this.vifs = vifs;
+        this.existing_disks = Some(existing_disks);
+        this.vifs = Some(vifs);
 
         Ok(this)
     }
