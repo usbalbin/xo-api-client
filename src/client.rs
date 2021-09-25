@@ -13,8 +13,8 @@ use crate::{
     credentials::{Credentials, Token},
     procedure_args, procedure_object,
     types::{
-        PartialVdi, PartialVif, Template, TemplateId, Vbd, VbdId,
-        Vdi, VdiId, Vif, VifId, VmOrSnapshotId,
+        PartialVdi, PartialVif, Template, TemplateId, Vbd, VbdId, Vdi, VdiId, Vif, VifId,
+        VmOrSnapshotId,
     },
     vm::OtherInfo,
     ObjectType, RpcError, Snapshot, SnapshotId, Vm, VmId,
