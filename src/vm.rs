@@ -1,6 +1,8 @@
 use std::{collections::BTreeMap, net::Ipv4Addr};
 
-use crate::VmId;
+use jsonrpsee_types::DeserializeOwned;
+
+use crate::{VmId, types::{XoObject, XoObjectId}};
 
 /// Type representing a VM
 ///
@@ -28,6 +30,14 @@ pub struct Vm<O> {
 
     pub other: O,
 }
+
+impl<O: DeserializeOwned> XoObject for Vm<O> {
+    const OBJECT_TYPE: &'static str = "VM";
+
+    type IdType = VmId;
+}
+
+impl XoObjectId for VmId{}
 
 /// Type describing power state of VM
 #[derive(Debug, Clone, Copy, serde::Deserialize, PartialEq, Eq)]

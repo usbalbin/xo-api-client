@@ -23,9 +23,9 @@ macro_rules! procedure_object {
     ($($key:expr => $value:expr),*) => {
         {
             #[allow(unused_mut)]
-            let mut map = ::serde_json::Map::new();
+            let mut map = ::serde_json::Map::<String, ::serde_json::Value>::new();
             $(
-                let _ = map.insert($key, serde_json::Value::from($value));
+                let _ = map.insert($key, $value.into());
             )*
             map
         }

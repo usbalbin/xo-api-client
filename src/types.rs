@@ -1,3 +1,6 @@
+use std::collections::{self, BTreeMap};
+use std::hash;
+
 use jsonrpsee_types::JsonValue;
 
 pub use jsonrpsee_types::Subscription;
@@ -28,6 +31,17 @@ macro_rules! impl_from_str {
     };
 }
 
+macro_rules! impl_xo_object {
+    ($t:ty => $object_type:expr, $id:ty) => {
+        impl XoObject for $t {
+            const OBJECT_TYPE: &'static str = $object_type;
+            type IdType = $id;
+        }
+
+        impl XoObjectId for $id {}
+    };
+}
+
 /// Unique id of a virtual machine
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
@@ -39,7 +53,7 @@ impl From<VmId> for String {
     }
 }
 
-impl_to_json_value!(VmId);
+impl_from_str!(VmId);
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct VmOrSnapshotId(pub(crate) String);
@@ -50,7 +64,7 @@ impl From<SnapshotId> for VmOrSnapshotId {
     }
 }
 
-impl_to_json_value!(VmOrSnapshotId);
+impl_from_str!(VmOrSnapshotId);
 
 impl From<VmId> for VmOrSnapshotId {
     fn from(id: VmId) -> Self {
@@ -65,6 +79,7 @@ pub struct TemplateId(pub(crate) String);
 impl_from_str!(TemplateId);
 
 /// See https://github.com/vatesfr/xen-orchestra/blob/a505cd9567233aab7ca6488b2fb8a0b6c610fa08/packages/xo-server/src/xapi-object-to-xo.mjs#L273
+#[non_exhaustive]
 #[derive(serde::Deserialize)]
 pub struct Template {
     pub id: TemplateId,
@@ -75,47 +90,48 @@ pub struct Template {
     #[serde(rename = "$VBDs")]
     pub(crate) vbds: Vec<VbdId>,
 }
+impl_xo_object!(Template => "VM-template", TemplateId);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct CloudConfigId(pub(crate) String);
-impl_to_json_value!(CloudConfigId);
+impl_from_str!(CloudConfigId);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct NetworkConfigId(pub(crate) String);
-impl_to_json_value!(NetworkConfigId);
+impl_from_str!(NetworkConfigId);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct SrId(pub(crate) String);
-impl_to_json_value!(SrId);
+impl_from_str!(SrId);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct NetworkId(pub(crate) String);
-impl_to_json_value!(NetworkId);
+impl_from_str!(NetworkId);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct VdiId(pub(crate) String);
-impl_to_json_value!(VdiId);
+impl_from_str!(VdiId);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct VbdId(pub(crate) String);
-impl_to_json_value!(VbdId);
+impl_from_str!(VbdId);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct VifId(pub(crate) String);
-impl_to_json_value!(VifId);
+impl_from_str!(VifId);
 
 /// Unique id of a virtual machine snapshot
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct SnapshotId(pub(crate) String);
-impl_to_json_value!(SnapshotId);
+impl_from_str!(SnapshotId);
 
 impl From<SnapshotId> for String {
     fn from(val: SnapshotId) -> Self {
@@ -124,15 +140,18 @@ impl From<SnapshotId> for String {
 }
 
 /// Type representing snapshot of a VM
+#[non_exhaustive]
 #[derive(serde::Deserialize, Debug)]
 pub struct Snapshot {
     pub id: SnapshotId,
     pub name_label: String,
     pub name_description: String,
 }
+impl_xo_object!(Snapshot => "VM-snapshot", SnapshotId);
 
+#[non_exhaustive]
 #[derive(serde::Serialize)]
-pub(crate) struct PartialVdi {
+pub struct PartialVdi {
     pub(crate) name_description: String,
     pub(crate) name_label: String,
     pub(crate) size: usize,
@@ -141,9 +160,33 @@ pub(crate) struct PartialVdi {
     pub(crate) sr: SrId,
 }
 
+#[non_exhaustive]
 #[derive(serde::Serialize)]
-pub(crate) struct PartialVif {
+pub struct NewVdi {
+    
+}
+
+impl PartialVdi {
+    pub fn new(name_label: String, size: usize, sr: SrId) -> Self {
+        PartialVdi {
+            name_label,
+            size,
+            sr,
+            name_description: String::new(),
+        }
+    }
+}
+
+#[non_exhaustive]
+#[derive(serde::Serialize)]
+pub struct PartialVif {
     pub(crate) network: NetworkId,
+}
+
+impl PartialVif {
+    pub fn new(network: NetworkId) -> Self {
+        PartialVif { network }
+    }
 }
 
 #[non_exhaustive]
@@ -168,7 +211,9 @@ pub struct Vdi {
     #[serde(rename = "$VBDs")]
     pub vbds: Vec<VbdId>,
 }
+impl_xo_object!(Vdi => "VDI", VdiId);
 
+#[non_exhaustive]
 #[derive(serde::Deserialize)]
 pub struct Vbd {
     pub id: VbdId,
@@ -188,7 +233,9 @@ pub struct Vbd {
     #[serde(rename = "VM")]
     pub vm: VmId,
 }
+impl_xo_object!(Vbd => "VBD", VbdId);
 
+#[non_exhaustive]
 #[derive(serde::Deserialize)]
 pub struct Vif {
     pub id: VifId,
@@ -217,6 +264,7 @@ pub struct Vif {
     #[serde(rename = "$VM")]
     pub vm: VmId,
 }
+impl_xo_object!(Vif => "VIF", VifId);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Impossible {}
@@ -245,4 +293,27 @@ mod tests {
         );
         assert_eq!(pfsense_snapshot.name_description, "Foo description");
     }
+}
+
+pub trait XoObjectId: serde::de::DeserializeOwned + Clone + Into<JsonValue> {}
+
+pub trait XoObject: serde::de::DeserializeOwned {
+    const OBJECT_TYPE: &'static str;
+    type IdType: XoObjectId;
+}
+
+pub trait XoObjectMap: serde::de::DeserializeOwned {
+    type Object: XoObject;
+}
+
+impl<T: XoObject> XoObjectMap for BTreeMap<T::IdType, T> where
+    <T as XoObject>::IdType: Ord
+{
+    type Object = T;
+}
+
+impl<T: XoObject> XoObjectMap for collections::HashMap<T::IdType, T> where
+    <T as XoObject>::IdType: Eq + hash::Hash
+{
+    type Object = T;
 }

@@ -13,30 +13,37 @@ use crate::{
     credentials::{Credentials, Token},
     procedure_args, procedure_object,
     types::{
-        PartialVdi, PartialVif, Template, TemplateId, Vbd, VbdId, Vdi, VdiId, Vif, VifId,
-        VmOrSnapshotId,
+        PartialVdi, PartialVif, Template, TemplateId, Vbd, Vdi, Vif, VmOrSnapshotId, XoObject,
+        XoObjectMap,
     },
     vm::OtherInfo,
-    ObjectType, RpcError, Snapshot, SnapshotId, Vm, VmId,
+    RpcError, Snapshot, SnapshotId, SrId, Vm, VmId,
 };
 
 macro_rules! declare_object_getter {
-    ($item_type_enum:expr, fn $fn_name:ident : $index_type:ident => $item_type:ty) => {
+    ($item_type:ty : single: fn $fn_name_single:ident, multi: fn $fn_name_multi:ident) => {
         /// Get all $item_type s from server
         /// * `filter` is an optional filter
         /// * `limit` is an optional max limit on number of results
-        pub async fn $fn_name(
+        pub async fn $fn_name_multi(
             &self,
             filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
             limit: impl Into<Option<usize>>,
-        ) -> Result<BTreeMap<$index_type, $item_type>, RpcError> {
+        ) -> Result<BTreeMap<<$item_type as XoObject>::IdType, $item_type>, RpcError> {
             // ::<BTreeMap<$index_type, $item_type>>
             self.get_objects_of_type/*::<BTreeMap<$index_type, $item_type>>*/(
-                $item_type_enum,
                 filter,
                 limit,
             )
             .await
+        }
+
+        /// Get one $item_type from server
+        pub async fn $fn_name_single(
+            &self,
+            id: <$item_type as XoObject>::IdType,
+        ) -> Result<Option<$item_type>, GetSingleObjectError> {
+            self.get_object_of_type(id).await
         }
     };
 }
@@ -52,6 +59,12 @@ pub enum RestartError {
 #[derive(Debug)]
 pub enum RevertSnapshotError {
     ReportedFail,
+    Rpc(RpcError),
+}
+
+#[derive(Debug)]
+pub enum GetSingleObjectError {
+    MultipleMatches,
     Rpc(RpcError),
 }
 
@@ -192,23 +205,55 @@ impl Client {
             .await
     }
 
-    /// Get all object of specified type from server
+    /// Get all objects of specified type from server
     /// * `R` is a type that can represent that collection of objects
-    /// * `object_type` is the type of object to fetch
     /// * `filter` is an optional filter
     /// * `limit` is an optional max limit on number of results
-    pub async fn get_objects_of_type<R: serde::de::DeserializeOwned>(
+    pub async fn get_objects_of_type<R: XoObjectMap>(
         &self,
-        object_type: ObjectType,
         filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
         limit: impl Into<Option<usize>>,
     ) -> Result<R, RpcError> {
         let mut filter = filter.into().unwrap_or_default();
-        filter.insert("type".to_string(), object_type.into());
+        filter.insert("type".to_string(), R::Object::OBJECT_TYPE.into());
 
         let objects = self.get_all_objects(filter, limit).await?;
 
         Ok(objects)
+    }
+
+    /// Get single object of specified type from server
+    /// * `R` is a type that can represent that type of object
+    /// * `id` is the id of the object
+    pub async fn get_object_of_type<R: XoObject>(
+        &self,
+        id: R::IdType,
+    ) -> Result<Option<R>, GetSingleObjectError>
+    where R::IdType: Ord {
+        let filter = procedure_object!(
+            "id" => id.clone(),
+            "type" => R::OBJECT_TYPE.to_string()
+        );
+
+        // TODO: Can we get rid of the BTreeMap here?
+        let mut result: BTreeMap<R::IdType, R> = self
+            .get_all_objects(filter, Some(2))
+            .await
+            .map_err(GetSingleObjectError::Rpc)?;
+
+        match result.remove(&id) {
+            None => Ok(None),
+            Some(vm) if result.is_empty() => Ok(Some(vm)),
+            _ => Err(GetSingleObjectError::MultipleMatches),
+        }
+    }
+
+    /// Get one VM from server
+    pub async fn get_vm<O: OtherInfo>(
+        &self,
+        id: VmId,
+    ) -> Result<Option<Vm<O>>, GetSingleObjectError> {
+        self.get_object_of_type(id).await
     }
 
     /// Get all VMs from server
@@ -219,14 +264,15 @@ impl Client {
         filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
         limit: impl Into<Option<usize>>,
     ) -> Result<BTreeMap<VmId, Vm<O>>, RpcError> {
-        self.get_objects_of_type/*::<BTreeMap<VmId, Vm<O>>>*/(ObjectType::Vm, filter, limit)
+        self.get_objects_of_type/*::<BTreeMap<VmId, Vm<O>>>*/(filter, limit)
             .await
     }
-    declare_object_getter!(ObjectType::VmTemplate, fn get_template : TemplateId => Template);
-    declare_object_getter!(ObjectType::VmSnapshot, fn get_snapshots : SnapshotId => Snapshot);
-    declare_object_getter!(ObjectType::Vbd, fn get_vbds : VbdId => Vbd);
-    declare_object_getter!(ObjectType::Vdi, fn get_vdis : VdiId => Vdi);
-    declare_object_getter!(ObjectType::Vif, fn get_vifs : VifId => Vif);
+
+    declare_object_getter!(Template : single: fn get_template, multi: fn get_templates);
+    declare_object_getter!(Snapshot : single: fn get_snapshot, multi: fn get_snapshots);
+    declare_object_getter!(Vbd : single: fn get_vbd, multi: fn get_vbds);
+    declare_object_getter!(Vdi : single: fn get_vdi, multi: fn get_vdis);
+    declare_object_getter!(Vif : single: fn get_vif, multi: fn get_vifs);
 
     /// This function will try to initiate a soft restart of the VM
     /// The there is no guarantee that the VM has started once the returned
@@ -366,163 +412,11 @@ impl Client {
             _ => unreachable!(),
         };
 
-        let response = self.inner
-            .request::</*CreateResult*/JsonValue>("vm.create", JsonRpcParams::Map(params))
-            .await?;
-        println!("response: {:?}", response);
-        todo!()
+        self.inner
+            .request("vm.create", JsonRpcParams::Map(params))
+            .await
     }
 }
-/*
-{
-  affinityHost: { type: 'string', optional: true },
-
-  bootAfterCreate: {
-    type: 'boolean',
-    optional: true,
-  },
-
-  cloudConfig: {
-    type: 'string',
-    optional: true,
-  },
-
-  networkConfig: {
-    type: 'string',
-    optional: true,
-  },
-
-  coreOs: {
-    type: 'boolean',
-    optional: true,
-  },
-
-  clone: {
-    type: 'boolean',
-    optional: true,
-  },
-
-  coresPerSocket: {
-    type: ['string', 'number'],
-    optional: true,
-  },
-
-  resourceSet: {
-    type: 'string',
-    optional: true,
-  },
-
-  installation: {
-    type: 'object',
-    optional: true,
-    properties: {
-      method: { type: 'string' },
-      repository: { type: 'string' },
-    },
-  },
-
-  vgpuType: {
-    type: 'string',
-    optional: true,
-  },
-
-  gpuGroup: {
-    type: 'string',
-    optional: true,
-  },
-
-  // Name/description of the new VM.
-  name_label: { type: 'string' },
-  name_description: { type: 'string', optional: true },
-
-  // PV Args
-  pv_args: { type: 'string', optional: true },
-
-  share: {
-    type: 'boolean',
-    optional: true,
-  },
-
-  // TODO: add the install repository!
-  // VBD.insert/eject
-  // Also for the console!
-
-  // UUID of the template the VM will be created from.
-  template: { type: 'string' },
-
-  // Virtual interfaces to create for the new VM.
-  VIFs: {
-    optional: true,
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        // UUID of the network to create the interface in.
-        network: { type: 'string' },
-
-        mac: {
-          optional: true, // Auto-generated per default.
-          type: 'string',
-        },
-
-        allowedIpv4Addresses: {
-          optional: true,
-          type: 'array',
-          items: { type: 'string' },
-        },
-
-        allowedIpv6Addresses: {
-          optional: true,
-          type: 'array',
-          items: { type: 'string' },
-        },
-      },
-    },
-  },
-
-  // Virtual disks to create for the new VM.
-  VDIs: {
-    optional: true, // If not defined, use the template parameters.
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        size: { type: ['integer', 'string'] },
-        SR: { type: 'string' },
-        type: { type: 'string' },
-      },
-    },
-  },
-
-  // TODO: rename to *existingVdis* or rename *VDIs* to *disks*.
-  existingDisks: {
-    optional: true,
-    type: 'object',
-
-    // Do not for a type object.
-    items: {
-      type: 'object',
-      properties: {
-        size: {
-          type: ['integer', 'string'],
-          optional: true,
-        },
-        $SR: {
-          type: 'string',
-          optional: true,
-        },
-      },
-    },
-  },
-
-  hvmBootFirmware: { type: 'string', optional: true },
-
-  copyHostBiosStrings: { type: 'boolean', optional: true },
-
-  // other params are passed to `editVm`
-  '*': { type: 'any' },
-}
-*/
 
 #[derive(serde::Serialize)]
 pub struct NewVmArgs {
@@ -535,11 +429,11 @@ pub struct NewVmArgs {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "existingDisks")]
-    existing_disks: Option<HashMap<usize, PartialVdi>>,
+    vdis_from_template: Option<HashMap<usize, PartialVdi>>,
     //installation,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "VDIs")]
-    vdis: Option<Vec<PartialVdi>>,
+    new_vdis: Option<Vec<NewVdi>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "VIFs")]
@@ -599,9 +493,9 @@ impl NewVmArgs {
 
             clone: None,
 
-            existing_disks: None,
+            vdis_from_template: None,
 
-            vdis: None,
+            new_vdis: None,
 
             vifs: None,
             cores_per_socket: None,
@@ -624,9 +518,8 @@ impl NewVmArgs {
     ) -> Result<Self, RpcError> {
         let mut this = Self::new_raw(name_label, template.id.clone());
 
-        let existing_disks: HashMap<usize, PartialVdi> = futures::stream::iter(&template.vbds)
+        let vdis_from_template: HashMap<usize, PartialVdi> = futures::stream::iter(&template.vbds)
             .filter_map(|vbd_id| async move {
-                println!("vbd");
                 let vbd = match con
                     .get_vbds(procedure_object! { "id" => vbd_id.0.clone() }, None)
                     .await
@@ -639,7 +532,6 @@ impl NewVmArgs {
                     return None;
                 };
 
-                println!("vdi");
                 let vdi = match con
                     .get_vdis(procedure_object! { "id" => vbd.vdi.0.clone() }, None)
                     .await
@@ -681,7 +573,6 @@ impl NewVmArgs {
 
         let vifs: Vec<PartialVif> = futures::stream::iter(&template.vifs)
             .filter_map(|vif_id| async move {
-                println!("vifs");
                 let response = con
                     .get_vifs(procedure_object! { "id" => vif_id.clone() }, None)
                     .await;
@@ -713,11 +604,84 @@ impl NewVmArgs {
         }
         */
 
-        this.existing_disks = Some(existing_disks);
+        this.vdis_from_template = Some(vdis_from_template);
         this.vifs = Some(vifs);
 
         Ok(this)
     }
+
+    pub fn grow_vdi_from_template(
+        &mut self,
+        vdi_index: usize,
+        new_size: usize,
+    ) -> Result<(), GrowVdiFromTemplateError> {
+        let vdis = match &mut self.vdis_from_template {
+            Some(vdis) => vdis,
+            None => return Err(GrowVdiFromTemplateError::NoSuchDisk { vdi_index }),
+        };
+
+        let vdi = match vdis.get_mut(&vdi_index) {
+            Some(vdi) => vdi,
+            None => return Err(GrowVdiFromTemplateError::NoSuchDisk { vdi_index }),
+        };
+
+        if new_size < vdi.size {
+            return Err(GrowVdiFromTemplateError::NewSizeIsSmaller {
+                current_size: vdi.size,
+                new_size,
+            });
+        }
+
+        vdi.size = new_size;
+        Ok(())
+    }
+
+    pub fn set_sr_for_vdi_from_template(
+        &mut self,
+        vdi_index: usize,
+        sr: SrId,
+    ) -> Result<(), NoSuchDiskError> {
+        let vdis = match &mut self.vdis_from_template {
+            Some(vdis) => vdis,
+            None => return Err(NoSuchDiskError { vdi_index }),
+        };
+
+        let vdi = match vdis.get_mut(&vdi_index) {
+            Some(vdi) => vdi,
+            None => return Err(NoSuchDiskError { vdi_index }),
+        };
+
+        vdi.sr = sr;
+        Ok(())
+    }
+
+    pub fn add_vdi(&mut self, vdi: PartialVdi) {
+        let vdis = self.new_vdis.get_or_insert_with(Vec::new);
+
+        vdis.push(vdi);
+    }
+
+    pub fn get_and_init_vifs(&mut self) -> &mut Vec<PartialVif> {
+        self.vifs.get_or_insert_with(Vec::new)
+    }
 }
+
+#[derive(Debug)]
+pub enum GrowVdiFromTemplateError {
+    NoSuchDisk {
+        vdi_index: usize,
+    },
+    NewSizeIsSmaller {
+        new_size: usize,
+        current_size: usize,
+    },
+}
+
+#[derive(Debug)]
+pub struct NoSuchDiskError {
+    #[allow(dead_code)]
+    vdi_index: usize,
+}
+
 #[derive(serde::Deserialize)]
 struct SigninResponse {}
