@@ -149,6 +149,8 @@ pub struct Snapshot {
 }
 impl_xo_object!(Snapshot => "VM-snapshot", SnapshotId);
 
+/// This is a subset of Vdi, used when creating a VM from a template
+/// with exisiting disks
 #[non_exhaustive]
 #[derive(serde::Serialize)]
 pub struct PartialVdi {
@@ -160,23 +162,8 @@ pub struct PartialVdi {
     pub(crate) sr: SrId,
 }
 
-#[non_exhaustive]
-#[derive(serde::Serialize)]
-pub struct NewVdi {
-    
-}
-
-impl PartialVdi {
-    pub fn new(name_label: String, size: usize, sr: SrId) -> Self {
-        PartialVdi {
-            name_label,
-            size,
-            sr,
-            name_description: String::new(),
-        }
-    }
-}
-
+/// This is used when creating a VM from a template
+/// with exisiting Vif s
 #[non_exhaustive]
 #[derive(serde::Serialize)]
 pub struct PartialVif {
@@ -306,14 +293,16 @@ pub trait XoObjectMap: serde::de::DeserializeOwned {
     type Object: XoObject;
 }
 
-impl<T: XoObject> XoObjectMap for BTreeMap<T::IdType, T> where
-    <T as XoObject>::IdType: Ord
+impl<T: XoObject> XoObjectMap for BTreeMap<T::IdType, T>
+where
+    <T as XoObject>::IdType: Ord,
 {
     type Object = T;
 }
 
-impl<T: XoObject> XoObjectMap for collections::HashMap<T::IdType, T> where
-    <T as XoObject>::IdType: Eq + hash::Hash
+impl<T: XoObject> XoObjectMap for collections::HashMap<T::IdType, T>
+where
+    <T as XoObject>::IdType: Eq + hash::Hash,
 {
     type Object = T;
 }

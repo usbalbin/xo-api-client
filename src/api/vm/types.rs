@@ -2,7 +2,10 @@ use std::{collections::BTreeMap, net::Ipv4Addr};
 
 use jsonrpsee_types::DeserializeOwned;
 
-use crate::{VmId, types::{XoObject, XoObjectId}};
+use crate::{
+    types::{XoObject, XoObjectId},
+    VmId,
+};
 
 /// Type representing a VM
 ///
@@ -37,7 +40,7 @@ impl<O: DeserializeOwned> XoObject for Vm<O> {
     type IdType = VmId;
 }
 
-impl XoObjectId for VmId{}
+impl XoObjectId for VmId {}
 
 /// Type describing power state of VM
 #[derive(Debug, Clone, Copy, serde::Deserialize, PartialEq, Eq)]
@@ -123,11 +126,11 @@ mod tests {
         net::Ipv4Addr,
     };
 
-    use crate::vm::PowerState;
+    use crate::api::vm::PowerState;
 
     #[test]
     fn debian() {
-        let debian = file_to_vm!("../test_data/vm/debian_10.json").0;
+        let debian = file_to_vm!("../../../test_data/vm/debian_10.json").0;
 
         assert_eq!(&debian.id.0, "deadbeaf-dead-beaf-dead-beafdeadbeaf");
         assert_eq!(
@@ -162,7 +165,7 @@ mod tests {
 
     #[test]
     fn pfsense() {
-        let pfsense = file_to_vm!("../test_data/vm/pfsense_2_5_1.json").1;
+        let pfsense = file_to_vm!("../../../test_data/vm/pfsense_2_5_1.json").1;
 
         assert_eq!(&pfsense.id.0, "deadbeaf-dead-beaf-dead-beafdeadbeaf");
         assert_eq!(
@@ -218,7 +221,7 @@ mod tests {
 
     #[test]
     fn ubuntu() {
-        let ubuntu = file_to_vm!("../test_data/vm/ubuntu_18_04.json").1;
+        let ubuntu = file_to_vm!("../../../test_data/vm/ubuntu_18_04.json").1;
 
         assert_eq!(&ubuntu.id.0, "deadbeaf-dead-beaf-dead-beafdeadbeaf");
         assert_eq!(
@@ -253,7 +256,7 @@ mod tests {
 
     #[test]
     fn windows() {
-        let windows = file_to_vm!("../test_data/vm/windows_10.json").0;
+        let windows = file_to_vm!("../../../test_data/vm/windows_10.json").0;
 
         assert_eq!(&windows.id.0, "deadbeaf-dead-beaf-dead-beafdeadbeaf");
         assert_eq!(
@@ -296,10 +299,10 @@ mod tests {
 
     #[test]
     fn other_info() {
-        let (debian_hash, debian_tree) = file_to_vm!("../test_data/vm/debian_10.json");
-        let (pfsense_hash, pfsense_tree) = file_to_vm!("../test_data/vm/pfsense_2_5_1.json");
-        let (ubuntu_hash, ubuntu_tree) = file_to_vm!("../test_data/vm/ubuntu_18_04.json");
-        let (windows_hash, windows_tree) = file_to_vm!("../test_data/vm/windows_10.json");
+        let (debian_hash, debian_tree) = file_to_vm!("../../../test_data/vm/debian_10.json");
+        let (pfsense_hash, pfsense_tree) = file_to_vm!("../../../test_data/vm/pfsense_2_5_1.json");
+        let (ubuntu_hash, ubuntu_tree) = file_to_vm!("../../../test_data/vm/ubuntu_18_04.json");
+        let (windows_hash, windows_tree) = file_to_vm!("../../../test_data/vm/windows_10.json");
 
         let debian_expected = [
             ("XenCenter.CustomFields.foo", "bar"),
