@@ -1,5 +1,9 @@
 use std::collections::BTreeMap;
-use xo_api_client::{credentials::EmailAndPassword, Client, Vm, VmId};
+use xo_api_client::{
+    api::vm::{Vm, VmId},
+    credentials::EmailAndPassword,
+    Client,
+};
 
 // We dont care about any of the data under the "other" attribute
 // in this example

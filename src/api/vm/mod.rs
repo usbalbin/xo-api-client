@@ -1,13 +1,14 @@
+#[cfg(test)]
+mod tests;
+
 mod types;
-pub use types::{OtherInfo, PowerState, Vm};
+pub use types::{OtherInfo, PowerState, Snapshot, SnapshotId, Vm, VmId, VmOrSnapshotId};
 
 use jsonrpsee_types::{traits::Client as _, v2::params::ParamsSer};
 use jsonrpsee_ws_client::WsClient;
 use std::sync::Arc;
 
-use crate::{procedure_args, types::VmOrSnapshotId, RpcError, SnapshotId, VmId};
-
-use super::{RestartError, RevertSnapshotError};
+use crate::{procedure_args, RpcError};
 
 pub struct VmProcedures {
     pub(crate) inner: Arc<WsClient>,
@@ -111,4 +112,18 @@ impl VmProcedures {
 
         Ok(())
     }
+}
+
+/// Error during restart of VM
+#[derive(Debug)]
+pub enum RestartError {
+    ReportedFail,
+    Rpc(RpcError),
+}
+
+/// Error during revert of VM snapshot
+#[derive(Debug)]
+pub enum RevertSnapshotError {
+    ReportedFail,
+    Rpc(RpcError),
 }

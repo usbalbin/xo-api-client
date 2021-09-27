@@ -11,13 +11,13 @@ use jsonrpsee_ws_client::{WsClient, WsClientBuilder};
 use crate::{
     procedure_object,
     types::{XoObject, XoObjectMap},
-    RpcError, Snapshot, VmId,
+    RpcError,
 };
 
 use self::{
     session::SessionProcedures,
     token::TokenProcedures,
-    vm::{OtherInfo, Vm, VmProcedures},
+    vm::{OtherInfo, Snapshot, Vm, VmId, VmProcedures},
     xo::XoProcedures,
 };
 
@@ -31,11 +31,7 @@ macro_rules! declare_object_getter {
             filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
             limit: impl Into<Option<usize>>,
         ) -> Result<BTreeMap<<$item_type as XoObject>::IdType, $item_type>, RpcError> {
-            self.get_objects_of_type(
-                filter,
-                limit,
-            )
-            .await
+            self.get_objects_of_type(filter, limit).await
         }
 
         /// Get one $item_type from server
@@ -46,20 +42,6 @@ macro_rules! declare_object_getter {
             self.get_object_of_type(id).await
         }
     };
-}
-
-/// Error during restart of VM
-#[derive(Debug)]
-pub enum RestartError {
-    ReportedFail,
-    Rpc(RpcError),
-}
-
-/// Error during revert of VM snapshot
-#[derive(Debug)]
-pub enum RevertSnapshotError {
-    ReportedFail,
-    Rpc(RpcError),
 }
 
 #[derive(Debug)]
@@ -73,7 +55,7 @@ pub enum GetSingleObjectError {
 /// Example of listing all VMs with the tag `Test`
 /// ```no_run
 /// use std::collections::BTreeMap;
-/// use xo_api_client::{credentials::EmailAndPassword, Client, Vm, VmId};
+/// use xo_api_client::{credentials::EmailAndPassword, Client, api::vm::{Vm, VmId}};
 ///
 /// // We dont care about any of the data under the "other" attribute
 /// // in this example
@@ -226,8 +208,7 @@ impl Client {
         filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
         limit: impl Into<Option<usize>>,
     ) -> Result<BTreeMap<VmId, Vm<O>>, RpcError> {
-        self.get_objects_of_type(filter, limit)
-            .await
+        self.get_objects_of_type(filter, limit).await
     }
 
     declare_object_getter!(Snapshot : single: fn get_snapshot, multi: fn get_snapshots);

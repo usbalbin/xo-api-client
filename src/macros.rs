@@ -49,3 +49,58 @@ macro_rules! struct_to_map {
         };
     };
 }
+
+#[macro_export]
+macro_rules! impl_to_json_value {
+    ($t:ty) => {
+        impl From<$t> for ::serde_json::Value {
+            fn from(val: $t) -> Self {
+                Self::String(val.0)
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_from_str {
+    ($t:path) => {
+        impl From<&str> for $t {
+            fn from(s: &str) -> Self {
+                $t(s.to_string())
+            }
+        }
+        impl From<String> for $t {
+            fn from(s: String) -> Self {
+                $t(s)
+            }
+        }
+        impl_to_json_value!($t);
+    };
+}
+
+#[macro_export]
+macro_rules! impl_xo_object {
+    ($t:ty => $object_type:expr, $id:ty) => {
+        impl crate::types::XoObject for $t {
+            const OBJECT_TYPE: &'static str = $object_type;
+            type IdType = $id;
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! declare_id_type {
+    (
+        $(#[$meta:meta])*
+        $v:vis struct $t:ident;
+    ) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+        #[serde(transparent)]
+        $v struct $t(pub(crate) String);
+
+        impl crate::types::XoObjectId for $t {}
+
+        crate::impl_to_json_value!($t);
+    };
+}
