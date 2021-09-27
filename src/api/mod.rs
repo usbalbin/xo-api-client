@@ -31,8 +31,7 @@ macro_rules! declare_object_getter {
             filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
             limit: impl Into<Option<usize>>,
         ) -> Result<BTreeMap<<$item_type as XoObject>::IdType, $item_type>, RpcError> {
-            // ::<BTreeMap<$index_type, $item_type>>
-            self.get_objects_of_type/*::<BTreeMap<$index_type, $item_type>>*/(
+            self.get_objects_of_type(
                 filter,
                 limit,
             )
@@ -227,7 +226,7 @@ impl Client {
         filter: impl Into<Option<serde_json::Map<String, JsonValue>>>,
         limit: impl Into<Option<usize>>,
     ) -> Result<BTreeMap<VmId, Vm<O>>, RpcError> {
-        self.get_objects_of_type/*::<BTreeMap<VmId, Vm<O>>>*/(filter, limit)
+        self.get_objects_of_type(filter, limit)
             .await
     }
 
