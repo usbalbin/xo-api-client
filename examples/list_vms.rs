@@ -28,6 +28,7 @@ async fn main() {
         .expect("Failed to sign in");
 
     let all_vms: BTreeMap<VmId, Vm<OtherInfo>> = con
+        .xo
         .get_objects(None, None)
         .await
         .expect("Failed to list VMs");
