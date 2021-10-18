@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use jsonrpsee_types::{
     traits::{Client as RpcCient, SubscriptionClient},
-    v2::params::JsonRpcParams,
+    v2::params::ParamsSer,
     DeserializeOwned, JsonValue, Subscription,
 };
 use jsonrpsee_ws_client::{WsClient, WsClientBuilder};
@@ -129,7 +129,7 @@ impl Client {
             .inner
             .request(
                 "session.signIn",
-                JsonRpcParams::Map(credentials.into().into()),
+                Some(ParamsSer::Map(credentials.into().into())),
             )
             .await?;
 
@@ -157,7 +157,7 @@ impl Client {
         // TODO: consider specifying the `expiresIn` parameter
         let token: Token = self
             .inner
-            .request("token.create", JsonRpcParams::Map(BTreeMap::new()))
+            .request("token.create", Some(ParamsSer::Map(BTreeMap::new())))
             .await?;
 
         Ok(token)
@@ -183,7 +183,7 @@ impl Client {
         };
 
         self.inner
-            .request("xo.getAllObjects", JsonRpcParams::Map(args))
+            .request("xo.getAllObjects", Some(ParamsSer::Map(args)))
             .await
     }
 
@@ -239,7 +239,7 @@ impl Client {
 
         let restart_suceeded: RestartResult = self
             .inner
-            .request("vm.restart", JsonRpcParams::Map(params))
+            .request("vm.restart", Some(ParamsSer::Map(params)))
             .await
             .map_err(RestartError::Rpc)?;
 
@@ -272,7 +272,7 @@ impl Client {
         };
 
         self.inner
-            .request("vm.snapshot", JsonRpcParams::Map(params))
+            .request("vm.snapshot", Some(ParamsSer::Map(params)))
             .await
             .map_err(Into::into)
     }
@@ -292,7 +292,7 @@ impl Client {
 
         let revert_result = self
             .inner
-            .request::<RevertResult>("vm.revert", JsonRpcParams::Map(params))
+            .request::<RevertResult>("vm.revert", Some(ParamsSer::Map(params)))
             .await
             .map_err(RevertSnapshotError::Rpc)?;
 
@@ -320,7 +320,7 @@ impl Client {
         let params = procedure_args! { "id" => vm_or_snapshot_id };
 
         self.inner
-            .request::<DeleteResult>("vm.delete", JsonRpcParams::Map(params))
+            .request::<DeleteResult>("vm.delete", Some(ParamsSer::Map(params)))
             .await?;
 
         Ok(())
