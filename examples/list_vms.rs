@@ -27,8 +27,10 @@ async fn main() {
         .await
         .expect("Failed to sign in");
 
-    let all_vms: BTreeMap<VmId, Vm<OtherInfo>> =
-        con.get_vms(None, None).await.expect("Failed to list VMs");
+    let all_vms: BTreeMap<VmId, Vm<OtherInfo>> = con
+        .get_objects(None, None)
+        .await
+        .expect("Failed to list VMs");
 
     let test_vms = all_vms
         .iter()
