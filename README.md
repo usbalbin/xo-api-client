@@ -33,7 +33,7 @@ use xo_api_client::{credentials::EmailAndPassword, Client, Vm, VmId};
 #[derive(serde::Deserialize)]
 struct OtherInfo {}
 
-impl xo_api_client::vm::OtherInfo for OtherInfo {}
+impl xo_api_client::api::vm::OtherInfo for OtherInfo {}
 
 #[tokio::main]
 async fn main() {
@@ -44,8 +44,9 @@ async fn main() {
     let con = Client::connect(url)
         .await
         .expect("Failed to connect to server");
-        
-    con.sign_in(EmailAndPassword { email, password })
+
+    con.session
+        .sign_in(EmailAndPassword { email, password })
         .await
         .expect("Failed to sign in");
 
