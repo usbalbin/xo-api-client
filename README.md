@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/xo-api-client.svg)](https://crates.io/crates/xo-api-client)
 [![docs.rs](https://docs.rs/xo-api-client/badge.svg)](https://docs.rs/xo-api-client/)
-[![dependency status](https://deps.rs/crate/xo-api-client/0.0.5/status.svg)](https://deps.rs/crate/xo-api-client/0.0.5)
+[![dependency status](https://deps.rs/crate/xo-api-client/0.0.6/status.svg)](https://deps.rs/crate/xo-api-client/0.0.6)
 
 <!--
 TODO: Add tests before showing these badges
