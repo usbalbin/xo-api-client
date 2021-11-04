@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/xo-api-client.svg)](https://crates.io/crates/xo-api-client)
 [![docs.rs](https://docs.rs/xo-api-client/badge.svg)](https://docs.rs/xo-api-client/)
-[![dependency status](https://deps.rs/crate/xo-api-client/0.0.6/status.svg)](https://deps.rs/crate/xo-api-client/0.0.6)
+[![dependency status](https://deps.rs/crate/xo-api-client/0.1.0/status.svg)](https://deps.rs/crate/xo-api-client/0.1.0)
 
 <!--
 TODO: Add tests before showing these badges
@@ -33,7 +33,7 @@ use xo_api_client::{credentials::EmailAndPassword, Client, Vm, VmId};
 #[derive(serde::Deserialize)]
 struct OtherInfo {}
 
-impl xo_api_client::vm::OtherInfo for OtherInfo {}
+impl xo_api_client::api::vm::OtherInfo for OtherInfo {}
 
 #[tokio::main]
 async fn main() {
@@ -44,8 +44,9 @@ async fn main() {
     let con = Client::connect(url)
         .await
         .expect("Failed to connect to server");
-        
-    con.sign_in(EmailAndPassword { email, password })
+
+    con.session
+        .sign_in(EmailAndPassword { email, password })
         .await
         .expect("Failed to sign in");
 

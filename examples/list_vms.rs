@@ -1,12 +1,16 @@
 use std::collections::BTreeMap;
-use xo_api_client::{credentials::EmailAndPassword, Client, Vm, VmId};
+use xo_api_client::{
+    api::vm::{Vm, VmId},
+    credentials::EmailAndPassword,
+    Client,
+};
 
 // We dont care about any of the data under the "other" attribute
 // in this example
 #[derive(serde::Deserialize)]
 struct OtherInfo {}
 
-impl xo_api_client::vm::OtherInfo for OtherInfo {}
+impl xo_api_client::api::vm::OtherInfo for OtherInfo {}
 
 #[tokio::main]
 async fn main() {
@@ -18,12 +22,16 @@ async fn main() {
         .await
         .expect("Failed to connect to server");
 
-    con.sign_in(EmailAndPassword { email, password })
+    con.session
+        .sign_in(EmailAndPassword { email, password })
         .await
         .expect("Failed to sign in");
 
-    let all_vms: BTreeMap<VmId, Vm<OtherInfo>> =
-        con.get_vms(None, None).await.expect("Failed to list VMs");
+    let all_vms: BTreeMap<VmId, Vm<OtherInfo>> = con
+        .xo
+        .get_objects(None, None)
+        .await
+        .expect("Failed to list VMs");
 
     let test_vms = all_vms
         .iter()
