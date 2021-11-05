@@ -95,7 +95,7 @@ macro_rules! declare_id_type {
         $v:vis struct $t:ident;
     ) => {
         $(#[$meta])*
-        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize, Hash)]
         #[serde(transparent)]
         $v struct $t(pub(crate) String);
 
