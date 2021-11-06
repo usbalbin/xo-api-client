@@ -14,6 +14,12 @@ impl ToString for Token {
     }
 }
 
+impl From<String> for Token {
+    fn from(s: String) -> Self {
+        Token(s)
+    }
+}
+
 impl FromStr for Token {
     type Err = Impossible;
 
